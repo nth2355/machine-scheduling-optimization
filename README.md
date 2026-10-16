@@ -1,208 +1,157 @@
-# Tối ưu Lập lịch Đa máy ứng dụng Genetic Algorithm và Trực quan hóa Gantt Chart
+# Tối ưu lập lịch đa máy
 
-Ứng dụng web mô phỏng và so sánh các phương pháp lập lịch đa máy cho bài toán tối ưu hóa trễ hạn có trọng số:
+Ứng dụng Flask phục vụ học tập và so sánh năm nhóm thuật toán lập lịch: **Greedy, Genetic Algorithm (GA), Branch and Bound (B&B), Tabu Search (TS) và CP-SAT**. LPT, EDD và WSPT là ba quy tắc ưu tiên trong nhóm Greedy.
 
-- Greedy (LPT, EDD, WSPT)
-- Branch and Bound (B&B)
-- Genetic Algorithm (GA)
+## Bài toán
 
-Ứng dụng hiển thị kết quả dưới dạng Gantt Chart với các công việc được đánh dấu màu xanh nếu đúng hạn và đỏ nếu trễ hạn.
+Có n công việc và m máy song song giống nhau. Mỗi công việc có mã `id`, thời lượng `p`, hạn hoàn thành `d` và trọng số `w`.
 
-## Mục tiêu bài toán
+- Mọi công việc sẵn sàng tại thời điểm 0.
+- Mỗi việc chạy liên tục trên đúng một máy; các việc trên cùng máy không chồng lấn.
+- Không xét thời gian thiết lập, quan hệ trước–sau hoặc hỏng máy.
+- Thời lượng và các mốc lập lịch tính theo **giờ**; thời gian chạy thuật toán tính theo **giây**.
 
-Cho tập hợp N công việc và M máy song song giống nhau. Mỗi công việc có:
-
-- thời gian thực thi p_i
-- deadline d_i
-- trọng số ưu tiên w_i
-
-Mục tiêu là tối thiểu hóa hàm mục tiêu:
-
-$$
-\sum_{i=1}^{n} w_i \cdot \max(0, C_i - d_i)
-$$
-
-với C_i là thời điểm hoàn thành công việc J_i.
-
-## Tính năng chính
-
-- Sinh dữ liệu công việc ngẫu nhiên
-- Chọn số máy và số công việc
-- Chạy các thuật toán:
-  - Greedy
-  - B&B (với dữ liệu nhỏ)
-  - GA
-- So sánh kết quả theo:
-  - objective
-  - makespan
-  - runtime
-- Trực quan hóa lịch trình theo Gantt Chart
-- Giao diện web tối giản, dễ trình bày và demo
-
-## Công nghệ sử dụng
-
-- Python
-- Flask
-- HTML/CSS/JavaScript
-
-## Cấu trúc dự án
+Mục tiêu là tối thiểu tổng độ trễ có trọng số:
 
 ```text
-.
-├── app.py
-├── requirements.txt
-├── README.md
-├── scheduling/
-│   ├── __init__.py
-│   ├── jobs.py
-│   ├── metrics.py
-│   ├── greedy.py
-│   ├── genetic.py
-│   ├── branch_and_bound.py
-│   └── service.py
-├── web/
-│   ├── __init__.py
-│   └── routes.py
-├── static/
-│   ├── app.js
-│   └── style.css
-├── templates/
-│   └── index.html
-├── tests/
-│   └── test_characterization.py
-└── .gitignore
+C_i = S_i + p_i
+T_i = max(0, C_i - d_i)
+F   = Σ w_i × T_i
 ```
 
-## Cài đặt
+`S_i` là giờ bắt đầu, `C_i` là giờ hoàn thành. Hạn là hạn mềm: hoàn thành sau hạn vẫn được phép nhưng chịu phạt. Hoàn thành sớm không tạo độ trễ âm.
 
-1. Clone project:
+**Makespan** là `max(C_i)`, chỉ dùng để báo cáo. Lịch có makespan nhỏ hơn chưa chắc có F nhỏ hơn; F = 0 không có nghĩa là chưa tìm được lịch.
 
-```bash
-git clone https://github.com/VickyJang095/ThuatToanUngDung-ThuatToanLapLich.git
-cd ThuatToanUngDung-ThuatToanLapLich
-```
+## Tính năng
 
-2. Tạo môi trường ảo (khuyến nghị):
+### Phòng thử nghiệm thuật toán
 
-```bash
-python -m venv .venv
-.venv\Scripts\activate
-```
+Tab mặc định có lựa chọn số máy, số việc, mức hạn và tham số GA. Sau khi sinh dữ liệu, bảng hiển thị đúng bộ việc dùng để chạy. Kết quả gồm F, makespan, runtime, nhận xét và Gantt của năm thuật toán.
 
-3. Cài đặt dependencies:
+Các ô tốt nhất và thao tác chính dùng highlight xanh lá sáng. Công việc trễ trên Gantt có màu đỏ, dấu `!` và viền nét đứt. Có thể chọn thanh công việc bằng chuột hoặc bàn phím để xem chi tiết.
 
-```bash
-pip install -r requirements.txt
-```
+### Lý thuyết thuật toán
 
-## Chạy ứng dụng
+Giải thích bài toán, ký hiệu, quy tắc ưu tiên, công thức, các bước thực hiện, ví dụ tính tay, cây B&B, toán tử GA, dấu vết TS và mô hình CP-SAT. Có mục lục nội bộ và tài liệu tham khảo học thuật.
 
-```bash
-python app.py
-```
+Chuyển tab không tải lại trang, không gọi lại thuật toán và giữ nguyên dữ liệu, cấu hình, kết quả, biểu đồ. Dùng mũi tên trái/phải, Home và End để chuyển tab bằng bàn phím.
 
-Chạy các kiểm thử bằng thư viện chuẩn của Python:
+## Cài đặt và chạy
 
-```bash
-python -m unittest discover -s tests -v
-```
+Đã kiểm tra với **Python 3.11**. Sử dụng terminal tại thư mục gốc dự án.
 
-Mở trình duyệt tại:
-
-```text
-http://127.0.0.1:5000
-```
-
-## Ví dụ chia sẻ cho teammate test
-
-Nếu muốn truy cập qua máy khác trong cùng mạng nội bộ:
-
-```text
-http://10.169.60.15:5000
-```
-
-Hoặc dùng ngrok để tạo public URL:
-
-```bash
-ngrok http 5000
-```
-
-## Thuật toán được tích hợp
-
-### 1. Greedy
-
-Nhóm thuật toán tham lam:
-
-- LPT: xếp công việc có thời gian thực thi dài nhất trước
-- EDD: ưu tiên công việc có deadline sớm nhất
-- WSPT: ưu tiên công việc có trọng số trên thời gian xử lý cao
-
-Dùng như baseline để so sánh với các thuật toán mạnh hơn.
-
-### 2. Branch and Bound
-
-Dùng cho tối đa 10 công việc. Mã hiện tại duyệt cả thứ tự công việc và cách phân máy, loại bỏ các máy tương đương và cắt nhánh bằng cận dưới. Đã đối chiếu với vét cạn độc lập trên dữ liệu nhỏ.
-
-### 3. Genetic Algorithm
-
-Dùng cho dữ liệu lớn hơn, nâng cao chất lượng lời giải trong thời gian thực tế.
-
-## Tổ chức mã nguồn
-
-- `scheduling/jobs.py`: sinh dữ liệu công việc.
-- `scheduling/metrics.py`: tính objective, makespan và thông tin trễ hạn của lịch.
-- `scheduling/greedy.py`: các policy LPT, EDD, WSPT; `schedule_lpt()` giữ tên gọi tương thích và dùng chung policy LPT.
-- `scheduling/genetic.py`: Genetic Algorithm, giải mã hoán vị và các toán tử di truyền.
-- `scheduling/branch_and_bound.py`: thuật toán B&B hiện tại.
-- `scheduling/service.py`: điều phối thuật toán, đo runtime và tạo payload kết quả.
-- `web/routes.py`: xử lý request Flask cho trang chính và API.
-- `app.py`: khởi tạo Flask, đăng ký route và hỗ trợ cách chạy `python app.py`.
-- `tests/`: kiểm thử đặc trưng cho thuật toán và schema API.
-
-## Kết luận
-
-Dự án này phù hợp cho mục đích demo và báo cáo môn học vì nó kết hợp:
-
-- lý thuyết lập lịch đa máy
-- thuật toán heuristic, exact, metaheuristic
-- trực quan hóa dữ liệu bằng Gantt Chart
-- khả năng so sánh rõ ràng giữa các phương pháp
-
-## Tác giả
-
-Đề tài được xây dựng phục vụ bài tập lớn và báo cáo môn học về Thuật toán ứng dụng.
-
-
-## Tabu Search và CP-SAT
-
-- `scheduling/tabu_search.py`: khởi tạo EDD, đổi chỗ hai chỉ số công việc, tabu theo cặp công việc, aspiration và lưu riêng lịch tốt nhất. Mặc định `max_iterations=100`, `tabu_tenure=7`; không có bước hợp lệ thì dừng.
-- `scheduling/cp_sat.py`: OR-Tools với optional interval cho từng cặp việc–máy, chọn đúng một máy và NoOverlap. Tối thiểu hóa tổng trễ hạn có trọng số; makespan chỉ để báo cáo. Horizon bằng tổng p vì mọi việc sẵn sàng từ 0 và có thể bỏ thời gian chờ mà không tăng objective.
-- CP-SAT yêu cầu p, d, w nguyên (không chấp nhận float kể cả 1.0), p và w không âm; d được phép âm. Thời gian giải mặc định 10 giây.
-- API giữ các khóa cũ và thêm `ts`, `cp_sat`. CP-SAT trả `status`, `best_bound`, `optimal`; chỉ OPTIMAL mới có `optimal=true`. Nếu chưa có lịch, objective và schedule là null. Thiếu OR-Tools trả UNAVAILABLE cùng hướng dẫn cài, các thuật toán khác vẫn chạy.
-- Giữ hành vi cũ của `run_algorithms`: danh sách jobs rỗng sẽ sinh `jobs_count` công việc; để kiểm tra bài toán rỗng qua service, đặt `jobs_count=0`.
-
-Cài và chạy trên Windows (Python 3.11 đã kiểm tra):
+### Windows PowerShell
 
 ```powershell
-.venv\Scripts\python.exe -m pip install -r requirements.txt
-.venv\Scripts\python.exe app.py
-# Mở http://127.0.0.1:5000
-.venv\Scripts\python.exe -m unittest discover -s tests -v
-node tests/test_frontend.cjs
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe app.py
 ```
 
-Kiểm tra gồm: vét cạn độc lập mọi hoán vị và mọi cách phân máy cho 10 bài toán 1–5 việc; xác minh lịch và objective; TS không kém EDD; tabu/aspiration; rỗng, một việc, thừa máy, p=0, w=0, d âm; kiểm tra kiểu dữ liệu; hết thời gian chưa có lịch; thiếu OR-Tools; JSON API và trạng thái FEASIBLE giả lập. Chưa kiểm tra trực quan trên trình duyệt hoặc hiệu năng dữ liệu lớn.
+### Linux / macOS
 
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python app.py
+```
 
-### Sinh dữ liệu theo tải máy
+Mở [http://127.0.0.1:5000](http://127.0.0.1:5000). Để tránh dùng nhầm môi trường Python, các lệnh trên gọi trực tiếp Python trong `.venv`.
 
-Backend là nơi duy nhất sinh dữ liệu. Trên giao diện chọn mức hạn rồi bấm **Sinh dữ liệu**; bảng hiển thị đúng bộ dữ liệu dùng khi chạy. Nếu chưa có dữ liệu, nút Chạy gọi API sinh trước.
+Phụ thuộc chính được ghim trong `requirements.txt`: Flask 3.0.3 và OR-Tools 9.15.6755. Nếu thiếu OR-Tools, CP-SAT báo `UNAVAILABLE` cùng hướng dẫn cài, các thuật toán khác vẫn chạy.
 
-Giữ p nguyên từ 3–20 giờ, w từ 1–5. Đặt H = max(p lớn nhất, tổng p / số máy). Khoảng deadline: Chặt 0,5H–0,9H; Vừa (mặc định) 0,8H–1,2H; Rộng 1,2H–1,8H. Cận dưới làm tròn lên và ít nhất bằng p của việc; cận trên làm tròn xuống, nâng bằng cận dưới nếu khoảng quá hẹp. Deadline là giờ nguyên tính từ mốc 0. Mức chặt tăng khả năng trễ, không bảo đảm chi phí luôn dương.
+`app.py` chạy Flask ở chế độ phát triển, không phải cấu hình triển khai production. Font Be Vietnam Pro tải từ Google Fonts; khi không truy cập được mạng, giao diện dùng font hệ thống dự phòng.
 
-API `/api/generate` nhận `machines`, `jobs`, `deadline_level` (`tight`, `medium`, `wide`). Tham số `max_deadline` cho người gọi Python trực tiếp vẫn được hỗ trợ như trần tùy chọn; luồng mặc định không dùng trần 60 giờ nữa.
+## Thuật toán và giới hạn
 
+| Nhóm | Cách hoạt động | Mặc định / giới hạn |
+| --- | --- | --- |
+| Greedy | Chạy LPT, EDD, WSPT rồi chọn lịch có F thấp nhất | Hòa F giữ quy tắc trước theo thứ tự LPT → EDD → WSPT; runtime là tổng ba lượt |
+| GA | Hoán vị công việc, giải mã vào máy rảnh sớm nhất, lai ghép và đổi chỗ | Quần thể 60; 120 thế hệ; xác suất lai 0,8; đột biến 0,1 |
+| B&B | Duyệt thứ tự công việc và cách phân máy, cắt nhánh bằng cận dưới, loại máy đối xứng | Chỉ chạy khi n ≤ 10; tối đa 5 giây; khởi tạo bằng EDD |
+| TS | Khởi tạo theo hạn, đổi chỗ hai việc, tabu theo cặp và ngoại lệ khi cải thiện tốt nhất | Tối đa 100 vòng, thời hạn cấm 7 vòng |
+| CP-SAT | Biến thời điểm, chọn máy, optional interval và NoOverlap; tối thiểu F | Giới hạn tìm kiếm 10 giây |
 
-### Giới hạn chờ khi chạy
+Greedy, GA và TS không mặc nhiên bảo đảm tối ưu. B&B chỉ chứng minh tối ưu khi hoàn tất tìm kiếm; hết giờ trả lịch tốt nhất với `TIME_LIMIT`. CP-SAT chỉ có `optimal=true` khi trạng thái là `OPTIMAL`; `FEASIBLE` chỉ xác nhận đã có lịch.
 
-B&B dừng sau tối đa 5 giây (tham số Python `time_limit`), trả lịch tốt nhất đã tìm được và `status=TIME_LIMIT`, `optimal=false` nếu hết giờ. Khởi tạo bằng lịch EDD để luôn có lịch khả thi. CP-SAT giữ giới hạn 10 giây. Giao diện báo đang chạy, khóa nút để tránh gửi trùng và hiển thị lỗi API nếu có; phần nhận xét ghi rõ khi B&B hết thời gian.
+CP-SAT yêu cầu p, d, w là số nguyên, không chấp nhận bool hoặc float kể cả `1.0`; p và w không âm, d có thể âm. Các hàm thuật toán khác chưa có lớp kiểm tra dữ liệu đầy đủ khi gọi trực tiếp; nên dùng dữ liệu đúng miền bài toán. GA được dùng trong miền tham số giao diện hợp lệ, không hỗ trợ tùy ý mọi giá trị quần thể/số thế hệ.
+
+## Sinh dữ liệu theo tải máy
+
+Backend là nơi duy nhất sinh dữ liệu: p nguyên từ 3–20 giờ, w nguyên từ 1–5. Đặt:
+
+```text
+H = max(p lớn nhất, tổng p / số máy)
+```
+
+| Mức hạn | Khoảng d |
+| --- | --- |
+| Chặt | 0,5H–0,9H |
+| Vừa (mặc định) | 0,8H–1,2H |
+| Rộng | 1,2H–1,8H |
+
+Cận dưới làm tròn lên và ít nhất bằng p của việc; cận trên làm tròn xuống, nâng bằng cận dưới nếu cần. Mức chặt tăng khả năng trễ, không bảo đảm mọi bộ đều có F > 0. Đổi mức hạn rồi bấm **Sinh dữ liệu** để áp dụng cho bộ mới.
+
+## Cấu trúc mã nguồn
+
+```text
+app.py                         Khởi tạo Flask
+requirements.txt               Phụ thuộc Python
+scheduling/
+  jobs.py                      Sinh dữ liệu
+  metrics.py                   Tính F, makespan và độ trễ
+  greedy.py                    LPT, EDD, WSPT
+  genetic.py                   GA, decoder và toán tử di truyền
+  branch_and_bound.py          B&B
+  tabu_search.py               TS
+  cp_sat.py                    Mô hình OR-Tools
+  service.py                   Điều phối, đo runtime, tạo kết quả
+web/routes.py                  Trang chủ và API
+templates/
+  index.html                   Header, hai tab và phòng thử nghiệm
+  theory.html                  Nội dung lý thuyết và ví dụ
+static/
+  app.js                       Tương tác thử nghiệm và Gantt
+  tabs.js                      Chuyển tab và mục lục lý thuyết
+  style.css                    Theme, typography, responsive
+  theory_examples.json         Dữ liệu minh họa đã kiểm chứng
+scripts/
+  build_theory_examples.py      Sinh lại dữ liệu minh họa ngoại tuyến
+```
+
+Các thư mục trên cần được giữ trong Git. `static/theory_examples.json` cần có khi khởi động trang chủ; không bỏ qua file này như một file tạm.
+
+## API
+
+- `GET /`: giao diện hai tab.
+- `POST /api/generate`: nhận `machines`, `jobs` (số việc), `deadline_level` (`tight`, `medium`, `wide`).
+- `POST /api/run`: nhận `machines`, danh sách `jobs`, `population`, `generations`, `crossover`, `mutation`.
+
+Kết quả chạy giữ các khóa `greedy`, `lpt`, `ga`, `bb`, `ts`, `cp_sat`. Khóa `lpt` riêng được giữ để tương thích, không phải nhóm thứ sáu trong bảng so sánh. CP-SAT trả thêm `status`, `best_bound`, `optimal`; khi chưa có lịch, `objective` và `schedule` là `null`, không phải 0. Service dùng `time.perf_counter()` để đo runtime và tính lại chỉ số từ lịch khả thi.
+
+## Dữ liệu minh họa và kiểm tra
+
+Ví dụ lý thuyết được chuẩn bị trước, không chạy solver khi chuyển tab. Để sinh lại sau khi thay đổi thuật toán:
+
+```powershell
+.\.venv\Scripts\python.exe scripts/build_theory_examples.py
+```
+
+Script cần OR-Tools, dùng GA seed 2718 và khôi phục trạng thái ngẫu nhiên sau khi chạy. Trên bộ năm việc, hai máy: LPT = 93, EDD = 48, WSPT = 86; GA, B&B, TS và CP-SAT đều đạt 48. Vét cạn độc lập xác nhận tối ưu là 48.
+
+**Theo cấu hình Git hiện tại, thư mục `tests/` được bỏ qua và không đi kèm bản clone mới.** Nếu bộ kiểm thử vẫn có trên máy phát triển, chạy:
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+node tests/test_frontend.cjs
+node tests/test_tabs.cjs
+```
+
+Bộ kiểm tra cục bộ gồm tính hợp lệ của lịch, tính lại F, đối chiếu vét cạn, trường hợp biên, thiếu OR-Tools, API, các ví dụ và việc chuyển tab giữ trạng thái. Đã kiểm tra giao diện bằng viewport desktop/mobile giả lập; chưa thay thế thử thiết bị thật, kiểm toán accessibility đầy đủ hoặc đo hiệu năng quy mô lớn.
+
+## Quy tắc Git
+
+`.gitignore` bỏ qua `tests/`, môi trường ảo, cache Python/kiểm thử, cấu hình IDE, công cụ trợ lý cục bộ (`.agents/`, `.codex/`), file môi trường riêng, log và thư mục build. Các file bị bỏ qua vẫn giữ trên máy. `.env.example` có thể được theo dõi để cung cấp mẫu cấu hình không chứa bí mật.
+
+Thay đổi `.gitignore` không tự ngừng theo dõi file đã commit; cần bỏ chúng khỏi Git index, không xóa khỏi ổ đĩa.

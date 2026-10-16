@@ -47,6 +47,12 @@ function renderTable(data) {
     tbody.innerHTML = '';
 
     const algorithms = algorithmItems;
+    const best = {};
+    for (const field of ['objective', 'runtime', 'makespan']) {
+        best[field] = Math.min(...algorithms
+            .filter(({ key }) => Array.isArray(data[key]?.schedule) && Number.isFinite(data[key]?.objective))
+            .map(({ key }) => data[key][field]).filter(Number.isFinite));
+    }
 
     algorithms.forEach(item => {
         const entry = data[item.key];
@@ -69,6 +75,12 @@ function renderTable(data) {
             <td>${entry.runtime !== null ? entry.runtime + 's' : '-'}</td>
             <td>${entry.makespan !== null ? entry.makespan : '-'}</td>
         `;
+        ['objective', 'runtime', 'makespan'].forEach((field, index) => {
+            if (Number.isFinite(entry[field]) && entry[field] === best[field]) {
+                row.cells[index + 1].className = 'best-value';
+                row.cells[index + 1].title = 'Tốt nhất trong các lịch có kết quả';
+            }
+        });
         if (item.key === 'cp_sat' && entry?.objective == null) {
             const status = document.createElement('small');
             status.textContent = ` — ${cpStatus(entry)} (${entry.status})`;
@@ -84,9 +96,10 @@ function renderConclusions(data) {
     // Chỉ so sánh thuật toán có lịch và chi phí hợp lệ; null không phải 0.
     const valid = algorithmItems.filter(({ key }) =>
         Number.isFinite(data[key]?.objective) && Array.isArray(data[key]?.schedule));
-    const add = text => {
+    const add = (text, className = '') => {
         const paragraph = document.createElement('p');
         paragraph.textContent = text;
+        paragraph.className = className;
         container.appendChild(paragraph);
     };
     if (!valid.length) {
@@ -100,11 +113,11 @@ function renderConclusions(data) {
             .map(item => item.label).join(', ') };
     };
     const objective = winners('objective');
-    add(`Chi phí trễ thấp nhất: ${objective.names} (objective = ${objective.value}).`);
+
     const runtime = winners('runtime');
-    if (runtime.names) add(`Chạy nhanh nhất: ${runtime.names} (${runtime.value} giây). Runtime hiển thị đã làm tròn; các giá trị bằng nhau được xem là đồng hạng.`);
+
     const makespan = winners('makespan');
-    if (makespan.names) add(`Hoàn thành toàn bộ công việc sớm nhất: ${makespan.names} (makespan = ${makespan.value} giờ).`);
+
     const candidates = valid.filter(({ key }) => data[key].objective === objective.value);
     const bestSpan = Math.min(...candidates.map(({ key }) =>
         Number.isFinite(data[key].makespan) ? data[key].makespan : Infinity));
@@ -114,10 +127,14 @@ function renderConclusions(data) {
         Number.isFinite(data[key].runtime) ? data[key].runtime : Infinity));
     const preferred = shorter.filter(({ key }) =>
         (Number.isFinite(data[key].runtime) ? data[key].runtime : Infinity) === bestRuntime);
-    add(`Đề xuất trên bộ dữ liệu này: ${preferred.map(item => item.label).join(', ')}. Thứ tự xét: objective thấp nhất → makespan nhỏ nhất → runtime ngắn nhất. Đây là cách chọn để so sánh, không thay đổi mục tiêu của các thuật toán.`);
-    if (data.bb?.status === 'TIME_LIMIT') add('B&B đã hết giới hạn 5 giây: kết quả là lịch tốt nhất tìm được, chưa chứng minh chi phí tối ưu.');
+    add(`Đề xuất: ${preferred.map(item => item.label).join(', ')}`, 'recommendation');
+    add(`Chi phí trễ thấp nhất: ${objective.value} — ${objective.names}`, 'conclusion-metric');
+    if (makespan.names) add(`Hoàn tất sớm nhất: ${makespan.value} giờ — ${makespan.names}`, 'conclusion-metric');
+    if (runtime.names) add(`Chạy nhanh nhất: ${runtime.value} giây — ${runtime.names}`, 'conclusion-metric');
+    add('Ưu tiên: chi phí trễ → makespan → runtime. Giá trị bằng nhau được đồng hạng; runtime đã làm tròn.', 'conclusion-note');
+    if (data.bb?.status === 'TIME_LIMIT') add('B&B hết 5 giây, chưa chứng minh tối ưu.', 'conclusion-note');
     const excluded = algorithmItems.filter(item => !valid.includes(item));
-    if (excluded.length) add(`Không đưa vào so sánh vì chưa có lịch: ${excluded.map(item => item.label).join(', ')}.`);
+    if (excluded.length) add(`Chưa có lịch: ${excluded.map(item => item.label).join(', ')}.`);
 }
 
 function updateSummary(data) {
@@ -125,6 +142,8 @@ function updateSummary(data) {
         document.getElementById(`${key}Objective`).textContent = data[key]?.objective ?? '-';
         document.getElementById(`${key}Runtime`).textContent = data[key]?.runtime != null ? `${data[key].runtime}s` : '-';
     }
+    document.getElementById('results').className = 'panel results';
+    document.getElementById('resultsContext').textContent = `${data.jobs?.length ?? 0} công việc · ${data.machines ?? '-'} máy · Ô đánh dấu • là kết quả tốt nhất ở mỗi cột.`;
     const cp = data.cp_sat;
     document.getElementById('cpStatus').textContent = cp?.optimal
         ? `Cận chi phí trễ: ${cp.best_bound ?? '-'}`
@@ -134,23 +153,16 @@ function updateSummary(data) {
     document.getElementById('gaObjective').textContent = data.ga.objective ?? '-';
     document.getElementById('bbObjective').textContent = data.bb.objective ?? '-';
 
-    document.getElementById('lptRuntime').textContent = data.greedy.runtime ? `${data.greedy.runtime}s` : '-';
-    document.getElementById('gaRuntime').textContent = data.ga.runtime ? `${data.ga.runtime}s` : '-';
-    document.getElementById('bbRuntime').textContent = data.bb.runtime ? `${data.bb.runtime}s` : '-';
+    document.getElementById('lptRuntime').textContent = data.greedy.runtime != null ? `${data.greedy.runtime}s` : '-';
+    document.getElementById('gaRuntime').textContent = data.ga.runtime != null ? `${data.ga.runtime}s` : '-';
+    document.getElementById('bbRuntime').textContent = data.bb.runtime != null ? `${data.bb.runtime}s` : '-';
 }
 
 function renderGantt(algorithms) {
     const container = document.getElementById('ganttContainer');
     container.innerHTML = '';
 
-    const machineBackgrounds = [
-        'rgba(94, 201, 255, 0.2)',
-        'rgba(120, 224, 169, 0.2)',
-        'rgba(244, 191, 105, 0.2)',
-        'rgba(255, 139, 123, 0.2)',
-        'rgba(199, 168, 255, 0.2)',
-        'rgba(122, 215, 209, 0.2)'
-    ];
+    const machineBackgrounds = ['var(--machine-1)', 'var(--machine-2)', 'var(--machine-3)', 'var(--machine-4)', 'var(--machine-5)', 'var(--machine-6)'];
 
     const renderOne = (title, schedule, totalRange) => {
         const card = document.createElement('div');
@@ -165,13 +177,17 @@ function renderGantt(algorithms) {
         schedule.forEach((_, index) => {
             const item = document.createElement('span');
             item.className = 'gantt-legend-item';
-            item.innerHTML = `<i style="background:${machineBackgrounds[index % machineBackgrounds.length]}; border: 1px solid rgba(255,255,255,0.2);"></i> M${index + 1}`;
+            item.innerHTML = `<i style="background:${machineBackgrounds[index % machineBackgrounds.length]};"></i> M${index + 1}`;
             legend.appendChild(item);
         });
         card.appendChild(legend);
 
         // Cùng một thang giờ cho mọi thuật toán, bắt đầu từ thời điểm 0.
         const displayRange = Math.max(24, Math.ceil(totalRange / 6) * 6);
+        const plot = document.createElement('div');
+        plot.className = 'gantt-plot';
+        // Giữ khoảng cách giữa mốc giờ; chỉ vùng biểu đồ cuộn khi cần.
+        plot.style.minWidth = `${Math.max(240, displayRange / 6 * 30 + 76)}px`;
         const axis = document.createElement('div');
         axis.className = 'gantt-time-axis';
         for (let hour = 0; hour <= displayRange; hour += 6) {
@@ -180,7 +196,7 @@ function renderGantt(algorithms) {
             tick.style.left = `${hour / displayRange * 100}%`;
             axis.appendChild(tick);
         }
-        card.appendChild(axis);
+        plot.appendChild(axis);
 
         const rows = [];
 
@@ -191,29 +207,42 @@ function renderGantt(algorithms) {
 
                 const label = document.createElement('div');
                 label.className = 'gantt-task-label';
-                label.textContent = `Task ${job.id}`;
+                label.textContent = `J${job.id} · M${machineIndex + 1}`;
 
                 const track = document.createElement('div');
                 track.className = 'gantt-track';
                 track.style.background = machineBackgrounds[machineIndex % machineBackgrounds.length];
 
-                const bar = document.createElement('div');
+                const bar = document.createElement('button');
+                bar.type = 'button';
                 const left = (job.start / Math.max(displayRange, 1)) * 100;
                 const width = ((job.end - job.start) / Math.max(displayRange, 1)) * 100;
                 bar.className = `gantt-bar ${job.end <= job.d ? 'green' : 'red'}`;
                 bar.style.left = `${left}%`;
                 bar.style.width = `${width}%`;
-                bar.textContent = `J${job.id}`;
-                bar.title = `Job ${job.id} | Machine ${machineIndex + 1} | Bắt đầu ${job.start} giờ | Kết thúc ${job.end} giờ | Hạn ${job.d} giờ`;
+                bar.textContent = `J${job.id}${job.end > job.d ? ' !' : ''}`;
+                bar.title = `Công việc ${job.id} | Máy ${machineIndex + 1} | Bắt đầu ${job.start} giờ | Kết thúc ${job.end} giờ | Hạn ${job.d} giờ`;
+                bar.ariaLabel = `${bar.title} | ${job.end > job.d ? 'Trễ hạn' : 'Đúng hạn'}`;
+                const detail = document.createElement('p');
+                detail.className = 'gantt-task-detail';
+                detail.textContent = `J${job.id} · Máy ${machineIndex + 1} · ${job.start}–${job.end} giờ · Hạn ${job.d} · ${job.end > job.d ? `Trễ ${job.end - job.d} giờ` : 'Đúng hạn'}`;
                 track.appendChild(bar);
 
                 row.appendChild(label);
                 row.appendChild(track);
+                row.appendChild(detail);
                 rows.push(row);
             });
         });
 
-        rows.forEach(row => card.appendChild(row));
+        rows.forEach(row => plot.appendChild(row));
+        if (!rows.length) {
+            const empty = document.createElement('p');
+            empty.className = 'empty-chart';
+            empty.textContent = 'Không có công việc trong lịch này.';
+            plot.appendChild(empty);
+        }
+        card.appendChild(plot);
         container.appendChild(card);
     };
 
@@ -225,7 +254,7 @@ function renderGantt(algorithms) {
     });
 }
 
-async function runAction(action, message) {
+async function runAction(action, message, successMessage = 'Chạy thuật toán hoàn tất') {
     if (state.busy) return;
     state.busy = true;
     const runButton = document.getElementById('runBtn');
@@ -234,11 +263,14 @@ async function runAction(action, message) {
     runButton.disabled = true;
     generateButton.disabled = true;
     runButton.textContent = 'Đang xử lý…';
+    status.className = 'run-status pending';
     status.textContent = message;
     try {
         await action();
-        status.textContent = 'Hoàn tất.';
+        status.className = 'run-status success';
+        status.textContent = successMessage;
     } catch (error) {
+        status.className = 'run-status error';
         status.textContent = `Không thực hiện được: ${error.message}`;
     } finally {
         state.busy = false;
@@ -258,7 +290,22 @@ async function readResponse(res) {
     return data;
 }
 
+function validateFields(ids) {
+    for (const id of ids) {
+        const field = document.getElementById(id);
+        if (!field.checkValidity()) {
+            const settings = field.closest('details');
+            if (settings) settings.open = true;
+            field.focus();
+            const label = document.querySelector(`label[for="${id}"]`)?.textContent ?? id;
+            const range = field.min && field.max ? `Nhập số từ ${field.min} đến ${field.max}` : 'Nhập số hợp lệ';
+            throw new Error(`${label}: ${range}${field.step ? `, bước ${field.step}` : ''}.`);
+        }
+    }
+}
+
 async function callGenerate() {
+    validateFields(['machineCount', 'jobCount']);
     const machineCount = Number(document.getElementById('machineCount').value);
     const jobCount = Number(document.getElementById('jobCount').value);
     const deadlineLevel = document.getElementById('deadlineLevel').value;
@@ -274,9 +321,14 @@ async function callGenerate() {
     document.getElementById('jobCount').value = data.jobs.length;
     state.jobs = data.jobs;
     renderJobs(state.jobs);
+    if (Object.keys(state.algorithms).length) {
+        document.getElementById('results').className = 'panel results is-stale';
+        document.getElementById('resultsContext').textContent = 'Dữ liệu đã đổi. Chạy lại để cập nhật kết quả bên dưới.';
+    }
 }
 
 async function callRun() {
+    validateFields(['machineCount', 'population', 'generations', 'crossover', 'mutation']);
     if (!state.jobs.length) await callGenerate();
     const machineCount = Number(document.getElementById('machineCount').value);
     const population = Number(document.getElementById('population').value);
@@ -311,9 +363,9 @@ async function callRun() {
     renderGantt(data);
 }
 
-document.getElementById('generateBtn').addEventListener('click', () => runAction(callGenerate, 'Đang sinh dữ liệu…'));
+document.getElementById('generateBtn').addEventListener('click', () => runAction(callGenerate, 'Đang sinh dữ liệu…', 'Sinh dữ liệu hoàn tất'));
 document.getElementById('runBtn').addEventListener('click', () => runAction(callRun, 'Đang chạy các thuật toán… B&B tối đa 5 giây, CP-SAT tối đa 10 giây.'));
 
 window.addEventListener('DOMContentLoaded', () => {
-    runAction(callGenerate, 'Đang sinh dữ liệu…');
+    runAction(callGenerate, 'Đang sinh dữ liệu…', 'Sinh dữ liệu hoàn tất');
 });

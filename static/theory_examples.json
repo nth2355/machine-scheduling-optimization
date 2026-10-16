@@ -1,0 +1,1700 @@
+{
+  "jobs": [
+    {
+      "id": 1,
+      "p": 9,
+      "d": 4,
+      "w": 6
+    },
+    {
+      "id": 2,
+      "p": 8,
+      "d": 11,
+      "w": 6
+    },
+    {
+      "id": 3,
+      "p": 2,
+      "d": 6,
+      "w": 3
+    },
+    {
+      "id": 4,
+      "p": 5,
+      "d": 14,
+      "w": 6
+    },
+    {
+      "id": 5,
+      "p": 4,
+      "d": 4,
+      "w": 4
+    }
+  ],
+  "machines": 2,
+  "results": {
+    "lpt": {
+      "label": "Greedy LPT",
+      "schedule": [
+        [
+          {
+            "id": 1,
+            "start": 0,
+            "end": 9,
+            "p": 9,
+            "d": 4,
+            "w": 6,
+            "machine": 1
+          },
+          {
+            "id": 5,
+            "start": 9,
+            "end": 13,
+            "p": 4,
+            "d": 4,
+            "w": 4,
+            "machine": 1
+          },
+          {
+            "id": 3,
+            "start": 13,
+            "end": 15,
+            "p": 2,
+            "d": 6,
+            "w": 3,
+            "machine": 1
+          }
+        ],
+        [
+          {
+            "id": 2,
+            "start": 0,
+            "end": 8,
+            "p": 8,
+            "d": 11,
+            "w": 6,
+            "machine": 2
+          },
+          {
+            "id": 4,
+            "start": 8,
+            "end": 13,
+            "p": 5,
+            "d": 14,
+            "w": 6,
+            "machine": 2
+          }
+        ]
+      ],
+      "rows": [
+        {
+          "id": 1,
+          "start": 0,
+          "end": 9,
+          "p": 9,
+          "d": 4,
+          "w": 6,
+          "machine": 1,
+          "before": [
+            0,
+            0
+          ],
+          "tardiness": 5,
+          "cost": 30
+        },
+        {
+          "id": 2,
+          "start": 0,
+          "end": 8,
+          "p": 8,
+          "d": 11,
+          "w": 6,
+          "machine": 2,
+          "before": [
+            9,
+            0
+          ],
+          "tardiness": 0,
+          "cost": 0
+        },
+        {
+          "id": 4,
+          "start": 8,
+          "end": 13,
+          "p": 5,
+          "d": 14,
+          "w": 6,
+          "machine": 2,
+          "before": [
+            9,
+            8
+          ],
+          "tardiness": 0,
+          "cost": 0
+        },
+        {
+          "id": 5,
+          "start": 9,
+          "end": 13,
+          "p": 4,
+          "d": 4,
+          "w": 4,
+          "machine": 1,
+          "before": [
+            9,
+            13
+          ],
+          "tardiness": 9,
+          "cost": 36
+        },
+        {
+          "id": 3,
+          "start": 13,
+          "end": 15,
+          "p": 2,
+          "d": 6,
+          "w": 3,
+          "machine": 1,
+          "before": [
+            13,
+            13
+          ],
+          "tardiness": 9,
+          "cost": 27
+        }
+      ],
+      "objective": 93,
+      "makespan": 15,
+      "status": null,
+      "optimal": false,
+      "order": [
+        1,
+        2,
+        4,
+        5,
+        3
+      ]
+    },
+    "edd": {
+      "label": "Greedy EDD",
+      "schedule": [
+        [
+          {
+            "id": 5,
+            "start": 0,
+            "end": 4,
+            "p": 4,
+            "d": 4,
+            "w": 4,
+            "machine": 1
+          },
+          {
+            "id": 3,
+            "start": 4,
+            "end": 6,
+            "p": 2,
+            "d": 6,
+            "w": 3,
+            "machine": 1
+          },
+          {
+            "id": 2,
+            "start": 6,
+            "end": 14,
+            "p": 8,
+            "d": 11,
+            "w": 6,
+            "machine": 1
+          }
+        ],
+        [
+          {
+            "id": 1,
+            "start": 0,
+            "end": 9,
+            "p": 9,
+            "d": 4,
+            "w": 6,
+            "machine": 2
+          },
+          {
+            "id": 4,
+            "start": 9,
+            "end": 14,
+            "p": 5,
+            "d": 14,
+            "w": 6,
+            "machine": 2
+          }
+        ]
+      ],
+      "rows": [
+        {
+          "id": 5,
+          "start": 0,
+          "end": 4,
+          "p": 4,
+          "d": 4,
+          "w": 4,
+          "machine": 1,
+          "before": [
+            0,
+            0
+          ],
+          "tardiness": 0,
+          "cost": 0
+        },
+        {
+          "id": 1,
+          "start": 0,
+          "end": 9,
+          "p": 9,
+          "d": 4,
+          "w": 6,
+          "machine": 2,
+          "before": [
+            4,
+            0
+          ],
+          "tardiness": 5,
+          "cost": 30
+        },
+        {
+          "id": 3,
+          "start": 4,
+          "end": 6,
+          "p": 2,
+          "d": 6,
+          "w": 3,
+          "machine": 1,
+          "before": [
+            4,
+            9
+          ],
+          "tardiness": 0,
+          "cost": 0
+        },
+        {
+          "id": 2,
+          "start": 6,
+          "end": 14,
+          "p": 8,
+          "d": 11,
+          "w": 6,
+          "machine": 1,
+          "before": [
+            6,
+            9
+          ],
+          "tardiness": 3,
+          "cost": 18
+        },
+        {
+          "id": 4,
+          "start": 9,
+          "end": 14,
+          "p": 5,
+          "d": 14,
+          "w": 6,
+          "machine": 2,
+          "before": [
+            14,
+            9
+          ],
+          "tardiness": 0,
+          "cost": 0
+        }
+      ],
+      "objective": 48,
+      "makespan": 14,
+      "status": null,
+      "optimal": false,
+      "order": [
+        5,
+        1,
+        3,
+        2,
+        4
+      ]
+    },
+    "wspt": {
+      "label": "Greedy WSPT",
+      "schedule": [
+        [
+          {
+            "id": 3,
+            "start": 0,
+            "end": 2,
+            "p": 2,
+            "d": 6,
+            "w": 3,
+            "machine": 1
+          },
+          {
+            "id": 5,
+            "start": 2,
+            "end": 6,
+            "p": 4,
+            "d": 4,
+            "w": 4,
+            "machine": 1
+          },
+          {
+            "id": 1,
+            "start": 6,
+            "end": 15,
+            "p": 9,
+            "d": 4,
+            "w": 6,
+            "machine": 1
+          }
+        ],
+        [
+          {
+            "id": 4,
+            "start": 0,
+            "end": 5,
+            "p": 5,
+            "d": 14,
+            "w": 6,
+            "machine": 2
+          },
+          {
+            "id": 2,
+            "start": 5,
+            "end": 13,
+            "p": 8,
+            "d": 11,
+            "w": 6,
+            "machine": 2
+          }
+        ]
+      ],
+      "rows": [
+        {
+          "id": 3,
+          "start": 0,
+          "end": 2,
+          "p": 2,
+          "d": 6,
+          "w": 3,
+          "machine": 1,
+          "before": [
+            0,
+            0
+          ],
+          "tardiness": 0,
+          "cost": 0
+        },
+        {
+          "id": 4,
+          "start": 0,
+          "end": 5,
+          "p": 5,
+          "d": 14,
+          "w": 6,
+          "machine": 2,
+          "before": [
+            2,
+            0
+          ],
+          "tardiness": 0,
+          "cost": 0
+        },
+        {
+          "id": 5,
+          "start": 2,
+          "end": 6,
+          "p": 4,
+          "d": 4,
+          "w": 4,
+          "machine": 1,
+          "before": [
+            2,
+            5
+          ],
+          "tardiness": 2,
+          "cost": 8
+        },
+        {
+          "id": 2,
+          "start": 5,
+          "end": 13,
+          "p": 8,
+          "d": 11,
+          "w": 6,
+          "machine": 2,
+          "before": [
+            6,
+            5
+          ],
+          "tardiness": 2,
+          "cost": 12
+        },
+        {
+          "id": 1,
+          "start": 6,
+          "end": 15,
+          "p": 9,
+          "d": 4,
+          "w": 6,
+          "machine": 1,
+          "before": [
+            6,
+            13
+          ],
+          "tardiness": 11,
+          "cost": 66
+        }
+      ],
+      "objective": 86,
+      "makespan": 15,
+      "status": null,
+      "optimal": false,
+      "order": [
+        3,
+        4,
+        5,
+        2,
+        1
+      ]
+    },
+    "ga": {
+      "label": "GA · seed 2718",
+      "schedule": [
+        [
+          {
+            "id": 5,
+            "start": 0,
+            "end": 4,
+            "p": 4,
+            "d": 4,
+            "w": 4,
+            "machine": 1
+          },
+          {
+            "id": 3,
+            "start": 4,
+            "end": 6,
+            "p": 2,
+            "d": 6,
+            "w": 3,
+            "machine": 1
+          },
+          {
+            "id": 2,
+            "start": 6,
+            "end": 14,
+            "p": 8,
+            "d": 11,
+            "w": 6,
+            "machine": 1
+          }
+        ],
+        [
+          {
+            "id": 1,
+            "start": 0,
+            "end": 9,
+            "p": 9,
+            "d": 4,
+            "w": 6,
+            "machine": 2
+          },
+          {
+            "id": 4,
+            "start": 9,
+            "end": 14,
+            "p": 5,
+            "d": 14,
+            "w": 6,
+            "machine": 2
+          }
+        ]
+      ],
+      "rows": [
+        {
+          "id": 5,
+          "start": 0,
+          "end": 4,
+          "p": 4,
+          "d": 4,
+          "w": 4,
+          "machine": 1,
+          "before": [
+            0,
+            0
+          ],
+          "tardiness": 0,
+          "cost": 0
+        },
+        {
+          "id": 1,
+          "start": 0,
+          "end": 9,
+          "p": 9,
+          "d": 4,
+          "w": 6,
+          "machine": 2,
+          "before": [
+            4,
+            0
+          ],
+          "tardiness": 5,
+          "cost": 30
+        },
+        {
+          "id": 3,
+          "start": 4,
+          "end": 6,
+          "p": 2,
+          "d": 6,
+          "w": 3,
+          "machine": 1,
+          "before": [
+            4,
+            9
+          ],
+          "tardiness": 0,
+          "cost": 0
+        },
+        {
+          "id": 2,
+          "start": 6,
+          "end": 14,
+          "p": 8,
+          "d": 11,
+          "w": 6,
+          "machine": 1,
+          "before": [
+            6,
+            9
+          ],
+          "tardiness": 3,
+          "cost": 18
+        },
+        {
+          "id": 4,
+          "start": 9,
+          "end": 14,
+          "p": 5,
+          "d": 14,
+          "w": 6,
+          "machine": 2,
+          "before": [
+            14,
+            9
+          ],
+          "tardiness": 0,
+          "cost": 0
+        }
+      ],
+      "objective": 48,
+      "makespan": 14,
+      "status": null,
+      "optimal": false,
+      "order": null
+    },
+    "bb": {
+      "label": "B&B",
+      "schedule": [
+        [
+          {
+            "id": 5,
+            "start": 0,
+            "end": 4,
+            "p": 4,
+            "d": 4,
+            "w": 4,
+            "machine": 1
+          },
+          {
+            "id": 3,
+            "start": 4,
+            "end": 6,
+            "p": 2,
+            "d": 6,
+            "w": 3,
+            "machine": 1
+          },
+          {
+            "id": 2,
+            "start": 6,
+            "end": 14,
+            "p": 8,
+            "d": 11,
+            "w": 6,
+            "machine": 1
+          }
+        ],
+        [
+          {
+            "id": 1,
+            "start": 0,
+            "end": 9,
+            "p": 9,
+            "d": 4,
+            "w": 6,
+            "machine": 2
+          },
+          {
+            "id": 4,
+            "start": 9,
+            "end": 14,
+            "p": 5,
+            "d": 14,
+            "w": 6,
+            "machine": 2
+          }
+        ]
+      ],
+      "rows": [
+        {
+          "id": 5,
+          "start": 0,
+          "end": 4,
+          "p": 4,
+          "d": 4,
+          "w": 4,
+          "machine": 1,
+          "before": [
+            0,
+            0
+          ],
+          "tardiness": 0,
+          "cost": 0
+        },
+        {
+          "id": 1,
+          "start": 0,
+          "end": 9,
+          "p": 9,
+          "d": 4,
+          "w": 6,
+          "machine": 2,
+          "before": [
+            4,
+            0
+          ],
+          "tardiness": 5,
+          "cost": 30
+        },
+        {
+          "id": 3,
+          "start": 4,
+          "end": 6,
+          "p": 2,
+          "d": 6,
+          "w": 3,
+          "machine": 1,
+          "before": [
+            4,
+            9
+          ],
+          "tardiness": 0,
+          "cost": 0
+        },
+        {
+          "id": 2,
+          "start": 6,
+          "end": 14,
+          "p": 8,
+          "d": 11,
+          "w": 6,
+          "machine": 1,
+          "before": [
+            6,
+            9
+          ],
+          "tardiness": 3,
+          "cost": 18
+        },
+        {
+          "id": 4,
+          "start": 9,
+          "end": 14,
+          "p": 5,
+          "d": 14,
+          "w": 6,
+          "machine": 2,
+          "before": [
+            14,
+            9
+          ],
+          "tardiness": 0,
+          "cost": 0
+        }
+      ],
+      "objective": 48,
+      "makespan": 14,
+      "status": "OPTIMAL",
+      "optimal": true,
+      "order": null
+    },
+    "ts": {
+      "label": "TS",
+      "schedule": [
+        [
+          {
+            "id": 1,
+            "start": 0,
+            "end": 9,
+            "p": 9,
+            "d": 4,
+            "w": 6,
+            "machine": 1
+          },
+          {
+            "id": 4,
+            "start": 9,
+            "end": 14,
+            "p": 5,
+            "d": 14,
+            "w": 6,
+            "machine": 1
+          }
+        ],
+        [
+          {
+            "id": 5,
+            "start": 0,
+            "end": 4,
+            "p": 4,
+            "d": 4,
+            "w": 4,
+            "machine": 2
+          },
+          {
+            "id": 3,
+            "start": 4,
+            "end": 6,
+            "p": 2,
+            "d": 6,
+            "w": 3,
+            "machine": 2
+          },
+          {
+            "id": 2,
+            "start": 6,
+            "end": 14,
+            "p": 8,
+            "d": 11,
+            "w": 6,
+            "machine": 2
+          }
+        ]
+      ],
+      "rows": [
+        {
+          "id": 1,
+          "start": 0,
+          "end": 9,
+          "p": 9,
+          "d": 4,
+          "w": 6,
+          "machine": 1,
+          "before": [
+            0,
+            0
+          ],
+          "tardiness": 5,
+          "cost": 30
+        },
+        {
+          "id": 5,
+          "start": 0,
+          "end": 4,
+          "p": 4,
+          "d": 4,
+          "w": 4,
+          "machine": 2,
+          "before": [
+            9,
+            0
+          ],
+          "tardiness": 0,
+          "cost": 0
+        },
+        {
+          "id": 3,
+          "start": 4,
+          "end": 6,
+          "p": 2,
+          "d": 6,
+          "w": 3,
+          "machine": 2,
+          "before": [
+            9,
+            4
+          ],
+          "tardiness": 0,
+          "cost": 0
+        },
+        {
+          "id": 2,
+          "start": 6,
+          "end": 14,
+          "p": 8,
+          "d": 11,
+          "w": 6,
+          "machine": 2,
+          "before": [
+            9,
+            6
+          ],
+          "tardiness": 3,
+          "cost": 18
+        },
+        {
+          "id": 4,
+          "start": 9,
+          "end": 14,
+          "p": 5,
+          "d": 14,
+          "w": 6,
+          "machine": 1,
+          "before": [
+            9,
+            14
+          ],
+          "tardiness": 0,
+          "cost": 0
+        }
+      ],
+      "objective": 48,
+      "makespan": 14,
+      "status": null,
+      "optimal": false,
+      "order": null
+    },
+    "cp_sat": {
+      "label": "CP-SAT",
+      "schedule": [
+        [
+          {
+            "id": 5,
+            "p": 4,
+            "d": 4,
+            "w": 4,
+            "start": 0,
+            "end": 4,
+            "machine": 1
+          },
+          {
+            "id": 3,
+            "p": 2,
+            "d": 6,
+            "w": 3,
+            "start": 4,
+            "end": 6,
+            "machine": 1
+          },
+          {
+            "id": 2,
+            "p": 8,
+            "d": 11,
+            "w": 6,
+            "start": 6,
+            "end": 14,
+            "machine": 1
+          }
+        ],
+        [
+          {
+            "id": 1,
+            "p": 9,
+            "d": 4,
+            "w": 6,
+            "start": 0,
+            "end": 9,
+            "machine": 2
+          },
+          {
+            "id": 4,
+            "p": 5,
+            "d": 14,
+            "w": 6,
+            "start": 9,
+            "end": 14,
+            "machine": 2
+          }
+        ]
+      ],
+      "rows": [
+        {
+          "id": 5,
+          "p": 4,
+          "d": 4,
+          "w": 4,
+          "start": 0,
+          "end": 4,
+          "machine": 1,
+          "before": [
+            0,
+            0
+          ],
+          "tardiness": 0,
+          "cost": 0
+        },
+        {
+          "id": 1,
+          "p": 9,
+          "d": 4,
+          "w": 6,
+          "start": 0,
+          "end": 9,
+          "machine": 2,
+          "before": [
+            4,
+            0
+          ],
+          "tardiness": 5,
+          "cost": 30
+        },
+        {
+          "id": 3,
+          "p": 2,
+          "d": 6,
+          "w": 3,
+          "start": 4,
+          "end": 6,
+          "machine": 1,
+          "before": [
+            4,
+            9
+          ],
+          "tardiness": 0,
+          "cost": 0
+        },
+        {
+          "id": 2,
+          "p": 8,
+          "d": 11,
+          "w": 6,
+          "start": 6,
+          "end": 14,
+          "machine": 1,
+          "before": [
+            6,
+            9
+          ],
+          "tardiness": 3,
+          "cost": 18
+        },
+        {
+          "id": 4,
+          "p": 5,
+          "d": 14,
+          "w": 6,
+          "start": 9,
+          "end": 14,
+          "machine": 2,
+          "before": [
+            14,
+            9
+          ],
+          "tardiness": 0,
+          "cost": 0
+        }
+      ],
+      "objective": 48,
+      "makespan": 14,
+      "status": "OPTIMAL",
+      "optimal": true,
+      "order": null
+    }
+  },
+  "optimum": 48,
+  "operators": [
+    {
+      "label": "Cha A",
+      "indices": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "ids": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "result": {
+        "label": "Cha A",
+        "schedule": [
+          [
+            {
+              "id": 1,
+              "start": 0,
+              "end": 9,
+              "p": 9,
+              "d": 4,
+              "w": 6,
+              "machine": 1
+            },
+            {
+              "id": 4,
+              "start": 9,
+              "end": 14,
+              "p": 5,
+              "d": 14,
+              "w": 6,
+              "machine": 1
+            }
+          ],
+          [
+            {
+              "id": 2,
+              "start": 0,
+              "end": 8,
+              "p": 8,
+              "d": 11,
+              "w": 6,
+              "machine": 2
+            },
+            {
+              "id": 3,
+              "start": 8,
+              "end": 10,
+              "p": 2,
+              "d": 6,
+              "w": 3,
+              "machine": 2
+            },
+            {
+              "id": 5,
+              "start": 10,
+              "end": 14,
+              "p": 4,
+              "d": 4,
+              "w": 4,
+              "machine": 2
+            }
+          ]
+        ],
+        "rows": [
+          {
+            "id": 1,
+            "start": 0,
+            "end": 9,
+            "p": 9,
+            "d": 4,
+            "w": 6,
+            "machine": 1,
+            "before": [
+              0,
+              0
+            ],
+            "tardiness": 5,
+            "cost": 30
+          },
+          {
+            "id": 2,
+            "start": 0,
+            "end": 8,
+            "p": 8,
+            "d": 11,
+            "w": 6,
+            "machine": 2,
+            "before": [
+              9,
+              0
+            ],
+            "tardiness": 0,
+            "cost": 0
+          },
+          {
+            "id": 3,
+            "start": 8,
+            "end": 10,
+            "p": 2,
+            "d": 6,
+            "w": 3,
+            "machine": 2,
+            "before": [
+              9,
+              8
+            ],
+            "tardiness": 4,
+            "cost": 12
+          },
+          {
+            "id": 4,
+            "start": 9,
+            "end": 14,
+            "p": 5,
+            "d": 14,
+            "w": 6,
+            "machine": 1,
+            "before": [
+              9,
+              10
+            ],
+            "tardiness": 0,
+            "cost": 0
+          },
+          {
+            "id": 5,
+            "start": 10,
+            "end": 14,
+            "p": 4,
+            "d": 4,
+            "w": 4,
+            "machine": 2,
+            "before": [
+              14,
+              10
+            ],
+            "tardiness": 10,
+            "cost": 40
+          }
+        ],
+        "objective": 82,
+        "makespan": 14,
+        "status": null,
+        "optimal": false,
+        "order": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      }
+    },
+    {
+      "label": "Cha B",
+      "indices": [
+        4,
+        3,
+        2,
+        1,
+        0
+      ],
+      "ids": [
+        5,
+        4,
+        3,
+        2,
+        1
+      ],
+      "result": {
+        "label": "Cha B",
+        "schedule": [
+          [
+            {
+              "id": 5,
+              "start": 0,
+              "end": 4,
+              "p": 4,
+              "d": 4,
+              "w": 4,
+              "machine": 1
+            },
+            {
+              "id": 3,
+              "start": 4,
+              "end": 6,
+              "p": 2,
+              "d": 6,
+              "w": 3,
+              "machine": 1
+            },
+            {
+              "id": 1,
+              "start": 6,
+              "end": 15,
+              "p": 9,
+              "d": 4,
+              "w": 6,
+              "machine": 1
+            }
+          ],
+          [
+            {
+              "id": 4,
+              "start": 0,
+              "end": 5,
+              "p": 5,
+              "d": 14,
+              "w": 6,
+              "machine": 2
+            },
+            {
+              "id": 2,
+              "start": 5,
+              "end": 13,
+              "p": 8,
+              "d": 11,
+              "w": 6,
+              "machine": 2
+            }
+          ]
+        ],
+        "rows": [
+          {
+            "id": 5,
+            "start": 0,
+            "end": 4,
+            "p": 4,
+            "d": 4,
+            "w": 4,
+            "machine": 1,
+            "before": [
+              0,
+              0
+            ],
+            "tardiness": 0,
+            "cost": 0
+          },
+          {
+            "id": 4,
+            "start": 0,
+            "end": 5,
+            "p": 5,
+            "d": 14,
+            "w": 6,
+            "machine": 2,
+            "before": [
+              4,
+              0
+            ],
+            "tardiness": 0,
+            "cost": 0
+          },
+          {
+            "id": 3,
+            "start": 4,
+            "end": 6,
+            "p": 2,
+            "d": 6,
+            "w": 3,
+            "machine": 1,
+            "before": [
+              4,
+              5
+            ],
+            "tardiness": 0,
+            "cost": 0
+          },
+          {
+            "id": 2,
+            "start": 5,
+            "end": 13,
+            "p": 8,
+            "d": 11,
+            "w": 6,
+            "machine": 2,
+            "before": [
+              6,
+              5
+            ],
+            "tardiness": 2,
+            "cost": 12
+          },
+          {
+            "id": 1,
+            "start": 6,
+            "end": 15,
+            "p": 9,
+            "d": 4,
+            "w": 6,
+            "machine": 1,
+            "before": [
+              6,
+              13
+            ],
+            "tardiness": 11,
+            "cost": 66
+          }
+        ],
+        "objective": 78,
+        "makespan": 15,
+        "status": null,
+        "optimal": false,
+        "order": [
+          5,
+          4,
+          3,
+          2,
+          1
+        ]
+      }
+    },
+    {
+      "label": "Con sau lai",
+      "indices": [
+        4,
+        1,
+        2,
+        3,
+        0
+      ],
+      "ids": [
+        5,
+        2,
+        3,
+        4,
+        1
+      ],
+      "result": {
+        "label": "Con sau lai",
+        "schedule": [
+          [
+            {
+              "id": 5,
+              "start": 0,
+              "end": 4,
+              "p": 4,
+              "d": 4,
+              "w": 4,
+              "machine": 1
+            },
+            {
+              "id": 3,
+              "start": 4,
+              "end": 6,
+              "p": 2,
+              "d": 6,
+              "w": 3,
+              "machine": 1
+            },
+            {
+              "id": 4,
+              "start": 6,
+              "end": 11,
+              "p": 5,
+              "d": 14,
+              "w": 6,
+              "machine": 1
+            }
+          ],
+          [
+            {
+              "id": 2,
+              "start": 0,
+              "end": 8,
+              "p": 8,
+              "d": 11,
+              "w": 6,
+              "machine": 2
+            },
+            {
+              "id": 1,
+              "start": 8,
+              "end": 17,
+              "p": 9,
+              "d": 4,
+              "w": 6,
+              "machine": 2
+            }
+          ]
+        ],
+        "rows": [
+          {
+            "id": 5,
+            "start": 0,
+            "end": 4,
+            "p": 4,
+            "d": 4,
+            "w": 4,
+            "machine": 1,
+            "before": [
+              0,
+              0
+            ],
+            "tardiness": 0,
+            "cost": 0
+          },
+          {
+            "id": 2,
+            "start": 0,
+            "end": 8,
+            "p": 8,
+            "d": 11,
+            "w": 6,
+            "machine": 2,
+            "before": [
+              4,
+              0
+            ],
+            "tardiness": 0,
+            "cost": 0
+          },
+          {
+            "id": 3,
+            "start": 4,
+            "end": 6,
+            "p": 2,
+            "d": 6,
+            "w": 3,
+            "machine": 1,
+            "before": [
+              4,
+              8
+            ],
+            "tardiness": 0,
+            "cost": 0
+          },
+          {
+            "id": 4,
+            "start": 6,
+            "end": 11,
+            "p": 5,
+            "d": 14,
+            "w": 6,
+            "machine": 1,
+            "before": [
+              6,
+              8
+            ],
+            "tardiness": 0,
+            "cost": 0
+          },
+          {
+            "id": 1,
+            "start": 8,
+            "end": 17,
+            "p": 9,
+            "d": 4,
+            "w": 6,
+            "machine": 2,
+            "before": [
+              11,
+              8
+            ],
+            "tardiness": 13,
+            "cost": 78
+          }
+        ],
+        "objective": 78,
+        "makespan": 17,
+        "status": null,
+        "optimal": false,
+        "order": [
+          5,
+          2,
+          3,
+          4,
+          1
+        ]
+      }
+    },
+    {
+      "label": "Con sau đột biến",
+      "indices": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "ids": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "result": {
+        "label": "Con sau đột biến",
+        "schedule": [
+          [
+            {
+              "id": 1,
+              "start": 0,
+              "end": 9,
+              "p": 9,
+              "d": 4,
+              "w": 6,
+              "machine": 1
+            },
+            {
+              "id": 4,
+              "start": 9,
+              "end": 14,
+              "p": 5,
+              "d": 14,
+              "w": 6,
+              "machine": 1
+            }
+          ],
+          [
+            {
+              "id": 2,
+              "start": 0,
+              "end": 8,
+              "p": 8,
+              "d": 11,
+              "w": 6,
+              "machine": 2
+            },
+            {
+              "id": 3,
+              "start": 8,
+              "end": 10,
+              "p": 2,
+              "d": 6,
+              "w": 3,
+              "machine": 2
+            },
+            {
+              "id": 5,
+              "start": 10,
+              "end": 14,
+              "p": 4,
+              "d": 4,
+              "w": 4,
+              "machine": 2
+            }
+          ]
+        ],
+        "rows": [
+          {
+            "id": 1,
+            "start": 0,
+            "end": 9,
+            "p": 9,
+            "d": 4,
+            "w": 6,
+            "machine": 1,
+            "before": [
+              0,
+              0
+            ],
+            "tardiness": 5,
+            "cost": 30
+          },
+          {
+            "id": 2,
+            "start": 0,
+            "end": 8,
+            "p": 8,
+            "d": 11,
+            "w": 6,
+            "machine": 2,
+            "before": [
+              9,
+              0
+            ],
+            "tardiness": 0,
+            "cost": 0
+          },
+          {
+            "id": 3,
+            "start": 8,
+            "end": 10,
+            "p": 2,
+            "d": 6,
+            "w": 3,
+            "machine": 2,
+            "before": [
+              9,
+              8
+            ],
+            "tardiness": 4,
+            "cost": 12
+          },
+          {
+            "id": 4,
+            "start": 9,
+            "end": 14,
+            "p": 5,
+            "d": 14,
+            "w": 6,
+            "machine": 1,
+            "before": [
+              9,
+              10
+            ],
+            "tardiness": 0,
+            "cost": 0
+          },
+          {
+            "id": 5,
+            "start": 10,
+            "end": 14,
+            "p": 4,
+            "d": 4,
+            "w": 4,
+            "machine": 2,
+            "before": [
+              14,
+              10
+            ],
+            "tardiness": 10,
+            "cost": 40
+          }
+        ],
+        "objective": 82,
+        "makespan": 14,
+        "status": null,
+        "optimal": false,
+        "order": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      }
+    }
+  ],
+  "ts_trace": [
+    {
+      "iteration": 1,
+      "ids": [
+        5,
+        1,
+        3,
+        2,
+        4
+      ],
+      "move": [
+        1,
+        5
+      ],
+      "current": 48,
+      "best": 48,
+      "expiry": 8
+    },
+    {
+      "iteration": 2,
+      "ids": [
+        3,
+        1,
+        5,
+        2,
+        4
+      ],
+      "move": [
+        3,
+        5
+      ],
+      "current": 56,
+      "best": 48,
+      "expiry": 9
+    },
+    {
+      "iteration": 3,
+      "ids": [
+        1,
+        3,
+        5,
+        2,
+        4
+      ],
+      "move": [
+        1,
+        3
+      ],
+      "current": 56,
+      "best": 48,
+      "expiry": 10
+    }
+  ],
+  "provenance": "Sinh ngoại tuyến bằng scripts/build_theory_examples.py; không đo runtime."
+}

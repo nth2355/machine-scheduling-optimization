@@ -1,3 +1,6 @@
+import json
+from pathlib import Path
+
 from flask import Blueprint, jsonify, render_template, request
 
 from scheduling.jobs import random_jobs
@@ -5,11 +8,14 @@ from scheduling.service import run_algorithms
 
 
 web = Blueprint("web", __name__)
+# Chỉ đọc dữ liệu đã kiểm chứng; không chạy solver trong request trang chủ.
+THEORY_EXAMPLES = json.loads((Path(__file__).resolve().parents[1] /
+                            "static/theory_examples.json").read_text(encoding="utf-8"))
 
 
 @web.route("/")
 def home():
-    return render_template("index.html")
+    return render_template("index.html", theory=THEORY_EXAMPLES)
 
 
 @web.route("/api/generate", methods=["POST"])

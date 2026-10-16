@@ -1,0 +1,278 @@
+{% macro table(headers, rows) -%}
+<div class="theory-table" role="region" tabindex="0" aria-label="Bảng minh họa"><table><thead><tr>{% for h in headers %}<th scope="col">{{ h }}</th>{% endfor %}</tr></thead><tbody>{% for row in rows %}<tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>{% endfor %}</tbody></table></div>
+{%- endmacro %}
+{% macro show_schedule(item, trace=false) -%}
+<div class="worked-example">
+    <h4>{{ item.label }} · F = {{ item.objective }} · C<sub>max</sub> = {{ item.makespan }} giờ</h4>
+    {% if item.order %}<p>Thứ tự xét: {% for id in item.order %}J{{ id }}{% if not loop.last %} → {% endif %}{% endfor %}.</p>{% endif %}
+    <div class="theory-gantt-scroll" tabindex="0" role="region" aria-label="Lịch {{ item.label }}, đơn vị giờ">
+        <div class="theory-gantt">
+            <div class="theory-gantt-axis"><span>Máy / giờ</span><div>{% for t in range(0, 29, 2) %}<span style="left:{{ t / 28 * 100 }}%">{{ t }}</span>{% endfor %}</div></div>
+            {% for lane in item.schedule %}<div class="theory-gantt-lane"><strong>M{{ loop.index }}</strong><div>{% for task in lane %}<span class="theory-job {% if task.end > task.d %}late{% endif %}" style="left:{{ task.start / 28 * 100 }}%;width:{{ task.p / 28 * 100 }}%" title="J{{ task.id }}: {{ task.start }}–{{ task.end }} giờ, hạn {{ task.d }}">J{{ task.id }}{% if task.end > task.d %}!{% endif %}</span>{% endfor %}</div></div>{% endfor %}
+        </div>
+    </div>
+    <p class="theory-caption">Trục 0–28 giờ dùng chung. Dấu ! và viền nét đứt: trễ hạn. Bảng dưới chứa đầy đủ số liệu tương đương biểu đồ.</p>
+    <div class="theory-table" role="region" tabindex="0" aria-label="Phép tính lịch {{ item.label }}"><table><thead><tr>{% if trace %}<th>Bước</th><th>Máy rảnh trước bước [M1,M2]</th>{% endif %}<th>Việc</th><th>Máy</th><th>p</th><th>d</th><th>w</th><th>S</th><th>C</th><th>T = max(0,C−d)</th><th>wT</th></tr></thead><tbody>
+    {% for t in item.rows %}<tr>{% if trace %}<td>{{ loop.index }}</td><td>[{{ t.before | join(', ') }}]</td>{% endif %}<td>J{{ t.id }}</td><td>M{{ t.machine }}</td><td>{{ t.p }}</td><td>{{ t.d }}</td><td>{{ t.w }}</td><td>{{ t.start }}</td><td>{{ t.end }}</td><td>{{ t.tardiness }}</td><td>{{ t.cost }}</td></tr>{% endfor %}
+    </tbody><tfoot><tr><th colspan="{{ 10 if trace else 8 }}">Tổng chi phí trễ F</th><td colspan="1">{{ item.objective }}</td></tr></tfoot></table></div>
+</div>
+{%- endmacro %}
+<div class="theory-intro"><span class="section-number">TÀI LIỆU ĐỒNG HÀNH</span><h2>Lý thuyết thuật toán</h2></div>
+<div class="theory-layout">
+    <nav class="theory-toc" aria-label="Mục lục lý thuyết">
+        <h3>Trong tài liệu này</h3>
+        <a href="#theory-overview" aria-current="location">01 · Bài toán &amp; ký hiệu</a>
+        <a href="#theory-greedy">02 · Greedy: LPT, EDD, WSPT</a>
+        <a href="#theory-bb">03 · B&amp;B: nhánh và cận</a>
+        <a href="#theory-ga">04 · GA: di truyền</a>
+        <a href="#theory-ts">05 · TS: tìm kiếm tabu</a>
+        <a href="#theory-cp">06 · CP-SAT</a>
+        <a href="#theory-comparison">07 · Ví dụ đối chiếu</a>
+        <a href="#theory-summary">08 · Tổng kết</a>
+        <a href="#theory-sources">09 · Tài liệu tham khảo</a>
+    </nav>
+    <article class="theory-content">
+        <section id="theory-overview" class="theory-section">
+            <span class="section-number">01 / BÀI TOÁN</span><h2>Xếp đơn hàng, giảm chi phí giao muộn</h2>
+            <p>Một xưởng có hai máy gia công giống nhau và năm đơn hàng cùng sẵn sàng từ đầu ca. Một đơn cần 9 giờ, một đơn chỉ cần 2 giờ; khách hàng có hạn nhận hàng và mức phạt khác nhau. Chạy đơn dài trước có thể giữ máy bận đều, nhưng lại làm đơn quan trọng chờ lâu. Ứng dụng tìm lịch làm giảm tổng phạt trễ.</p>
+            <h3>Đầu vào, đầu ra và giả thiết đã xác minh</h3>
+            <p>Đầu vào là danh sách <code>id, p, d, w</code> và số máy m. Đầu ra là danh sách việc trên từng máy kèm S, C và F. Máy song song <strong>giống nhau</strong>; thời lượng một việc không phụ thuộc máy. Mỗi việc được giao đúng một máy, chạy liên tục, không chia nhỏ hoặc ngắt giữa chừng. Một máy không chạy hai việc chồng lấn.</p>
+            <p>Tất cả việc sẵn sàng lúc 0. Bài toán không xét thời gian thiết lập, quan hệ trước–sau, thời gian di chuyển, hỏng máy hay giờ nghỉ. Hạn d là <strong>hạn mềm</strong>: được phép hoàn thành sau hạn và chịu phạt. Các heuristic và B&amp;B xếp nối tiếp từ lúc máy rảnh; CP-SAT được phép để máy chờ. Không có mục tiêu phụ tối thiểu makespan trong solver.</p>
+            {{ table(['Ký hiệu', 'Ý nghĩa'], [['n','Số công việc'],['m','Số máy'],['Jᵢ','Công việc thứ i; id là nhãn, khác chỉ số mảng'],['pᵢ','Thời lượng xử lý, đơn vị giờ'],['dᵢ','Hạn hoàn thành, tính từ giờ 0'],['wᵢ','Trọng số phạt mỗi giờ trễ'],['Sᵢ','Thời điểm bắt đầu'],['Cᵢ','Thời điểm hoàn thành'],['Tᵢ','Số giờ trễ, luôn không âm']]) }}
+            <div class="formula" aria-label="Hàm mục tiêu"><div>C<sub>i</sub> = S<sub>i</sub> + p<sub>i</sub></div><div>T<sub>i</sub> = max(0, C<sub>i</sub> − d<sub>i</sub>)</div><div>Min F = ∑<sub>i=1…n</sub> w<sub>i</sub>T<sub>i</sub></div></div>
+            <p><strong>Ví dụ:</strong> p = 5, d = 12, w = 3. Bắt đầu giờ 4 thì C = 9; độ lệch hạn C−d = −3 nhưng T = 0, chi phí bằng 0. Bắt đầu giờ 10 thì C = 15, T = 3, chi phí 3×3 = 9. Hoàn thành sớm không được “trừ tiền phạt” để bù cho việc khác.</p>
+            <p><strong>Độ lệch hạn</strong> L<sub>i</sub> = C<sub>i</sub>−d<sub>i</sub> có thể âm. <strong>Độ trễ</strong> T<sub>i</sub> không âm. Tổng T khác tổng wT khi trọng số khác nhau. <strong>Makespan</strong> C<sub>max</sub> = max C<sub>i</sub> là mốc hoàn tất toàn bộ, không phải F và cũng không phải thời gian tính toán của thuật toán. Runtime được đo bằng giây thực trên máy tính.</p>
+            <p>Hai lịch có F bằng nhau có thể có makespan khác nhau. Ngược lại, cùng bộ ví dụ dưới đây, hoán vị [1,2,3,4,5] cho C<sub>max</sub> = 14, F = 82; hoán vị [5,2,3,4,1] cho C<sub>max</sub> = 17, F = 78. Lịch hoàn tất sớm hơn vẫn có chi phí lớn hơn vì việc có trọng số lớn bị trễ nhiều hơn.</p>
+            <h3>Bộ dữ liệu dùng xuyên suốt</h3>
+            <p>n = 5, m = 2. Đây là dữ liệu học tập cố định, không thay thế dữ liệu ngẫu nhiên của phòng thử nghiệm. J1 có p &gt; d, nên ngay cả chạy lúc 0 cũng trễ ít nhất 5 giờ: phạt tối thiểu riêng việc này là 30.</p>
+            <div class="theory-table" role="region" tabindex="0" aria-label="Năm công việc mẫu"><table><thead><tr><th>Việc</th><th>p (giờ)</th><th>d (giờ)</th><th>w</th></tr></thead><tbody>{% for j in theory.jobs %}<tr><td>J{{ j.id }}</td><td>{{ j.p }}</td><td>{{ j.d }}</td><td>{{ j.w }}</td></tr>{% endfor %}</tbody></table></div>
+        </section>
+
+        <section id="theory-greedy" class="theory-section">
+            <span class="section-number">02 / GREEDY</span><h2>Tham lam: chọn thứ tự trước, chọn máy sau</h2>
+            <p>Greedy, hay phương pháp tham lam, cố định một thứ tự ưu tiên rồi giao lần lượt từng việc cho máy rảnh sớm nhất. Nó ra quyết định nhanh, không quay lại sửa các việc đã xếp. Một quy tắc chỉ là cách <em>chọn việc</em>; cách <em>chọn máy</em> là bước riêng.</p>
+            <div class="formula">k = arg min<sub>máy k</sub> (a<sub>k</sub>, k) &nbsp; ; &nbsp; S<sub>i</sub> = a<sub>k</sub>, C<sub>i</sub> = a<sub>k</sub> + p<sub>i</sub></div>
+            <p>a<sub>k</sub> là giờ máy k rảnh. Nếu hai máy rảnh cùng lúc, máy có chỉ số nhỏ hơn được chọn. Khi khóa sắp xếp công việc hoàn toàn bằng nhau, thứ tự đầu vào được giữ nguyên.</p>
+            <pre class="pseudocode" tabindex="0">Đầu vào: danh sách công việc, m, quy tắc q
+Đầu ra: lịch trên m máy
+1. Sắp jobs theo khóa của q.
+2. Đặt a[1…m] = 0; lịch mỗi máy rỗng.
+3. Với từng việc i theo thứ tự:
+   k ← máy có (a[k], k) nhỏ nhất
+   S[i] ← a[k]; C[i] ← S[i] + p[i]
+   Thêm i vào máy k; a[k] ← C[i].
+4. Tính F từ lịch.</pre>
+            <h3>LPT - Việc dài trước</h3>
+            <p><strong>Trực giác:</strong> xử lý những việc chiếm máy lâu trước để giảm nguy cơ một việc dài bị dồn về cuối. LPT (Longest Processing Time) sử dụng p để cân tải; w không tham gia thứ tự.</p>
+            <div class="formula">Khóa giảm dần: (p<sub>i</sub>, d<sub>i</sub>)</div>
+            <p>Thuật toán ưu tiên p lớn; nếu p bằng nhau, <strong>d lớn hơn đi trước</strong> vì cả bộ khóa được đảo chiều. Đây là lựa chọn phá hòa của dự án, không phải quy tắc “hạn sớm trước”. Trong ví dụ: 1 → 2 → 4 → 5 → 3. J1 và J2 chiếm hai máy đầu tiên; J3 ngắn và hạn sớm lại bị đẩy đến giờ 13.</p>
+            {{ show_schedule(theory.results.lpt, true) }}
+            <p>J1 phạt 6×5 = 30; J5 phạt 4×9 = 36; J3 phạt 3×9 = 27, tổng 93. Máy rảnh [9,13] ở bước cuối nên J3 vào M1 tại giờ 13. LPT dễ triển khai và thường dùng cho cân tải/makespan; nó không trực tiếp tối thiểu phạt trễ.</p>
+            <p class="source-note">Về bài toán máy song song giống nhau và mục tiêu makespan, xem <a href="https://epubs.siam.org/doi/10.1137/0117039" target="_blank" rel="noopener">Graham (1969), Bounds on Multiprocessing Timing Anomalies</a>. Không chuyển các bảo đảm cho makespan sang F = ∑wT trong ứng dụng này.</p>
+            <h3>EDD - Hạn sớm trước</h3>
+            <p><strong>Trực giác:</strong> việc gần đến hạn nên được làm sớm. EDD (Earliest Due Date) sử dụng d; p chỉ phá hòa, w không trực tiếp được xét.</p>
+            <div class="formula">Khóa tăng dần: (d<sub>i</sub>, p<sub>i</sub>)</div>
+            <p>J5 và J1 cùng d = 4; J5 có p = 4 nhỏ hơn p = 9 nên được xét trước, vào M1. J1 vào M2 vì M2 còn rảnh lúc 0. Đến bước 3, M1 rảnh lúc 4 còn M2 lúc 9: J3 được xếp vào M1 và vừa kịp hạn 6.</p>
+            {{ show_schedule(theory.results.edd, true) }}
+            <p>Chỉ J1 và J2 trễ: 30 + 6×3 = 48. EDD có ưu điểm dễ giải thích, chú ý hạn; nhược điểm là không thấy sự chênh lệch mức phạt. Nó có thể dành máy cho việc nhẹ phạt trong khi việc rất quan trọng phải chờ.</p>
+            <p class="source-note">Với <strong>một máy</strong>, mọi việc sẵn sàng từ 0, không ngắt, không thiết lập hay quan hệ trước–sau, EDD tối ưu độ lệch hạn lớn nhất L<sub>max</sub>. Kết quả này không khẳng định tối ưu ∑wT trên nhiều máy. Xem <a href="https://web-static.stern.nyu.edu/om/faculty/pinedo/scheduling/dortmund_slides.pdf" target="_blank" rel="noopener">Schwiegelshohn, Scheduling Problems and Solutions</a>, phần mô hình độ lệch hạn.</p>
+            <h3>WSPT - Việc ngắn có trọng số lớn trước</h3>
+            <p><strong>Trực giác:</strong> ưu tiên việc tạo ra nhiều “trọng số được xử lý” trên mỗi giờ. WSPT (Weighted Shortest Processing Time) cân bằng p và w. Khi p,w &gt; 0, sắp p/w tăng tương đương sắp w/p giảm: hai tỷ lệ là nghịch đảo.</p>
+            <div class="formula">Sắp giảm theo: (w<sub>i</sub> / max(p<sub>i</sub>, 1), d<sub>i</sub>)</div>
+            <p>Với p nguyên dương trong ví dụ, điểm lần lượt là J1: 6/9 ≈ 0,667; J2: 6/8 = 0,75; J3: 3/2 = 1,5; J4: 6/5 = 1,2; J5: 4/4 = 1. Thứ tự 3 → 4 → 5 → 2 → 1. Nếu tỷ lệ bằng nhau, thuật toán ưu tiên <strong>d lớn hơn</strong>, không phải d nhỏ hơn.</p>
+            {{ show_schedule(theory.results.wspt, true) }}
+            <p>J3 và J4 được chạy lúc 0, J1 phải đợi đến giờ 6 và kết thúc lúc 15: riêng J1 chịu 66. J5 phạt 8, J2 phạt 12; tổng 86. WSPT có lợi khi trọng số cần được chú ý nhưng hạn không nằm trong tiêu chí chính, nên không thể coi đây là lời giải tối ưu phạt trễ.</p>
+            <details><summary>Giá trị 0 và miền dữ liệu: khác biệt quan trọng</summary><p><code>max(p,1)</code> tránh chia cho 0 nhưng làm p = 0 dùng điểm w thay vì tỷ lệ vô hạn. Nếu 0 &lt; p &lt; 1 thì cũng dùng mẫu 1, khác WSPT chuẩn. w = 0 cho điểm 0. Các quy tắc này cần dữ liệu hợp lệ: p và w không âm. Dữ liệu ngẫu nhiên dùng p nguyên 3–20 và w nguyên 1–5. Không dùng các kết luận lý thuyết trên dữ liệu ngoài các điều kiện đã nêu.</p></details>
+            <p class="source-note">Với một máy, tất cả việc sẵn sàng từ 0, không ngắt, p,w dương, WSPT tối ưu <strong>∑wC</strong>, không phải ∑wT. Nguồn: <a href="https://onlinelibrary.wiley.com/doi/10.1002/nav.3800030106" target="_blank" rel="noopener">Smith (1956), Various optimizers for single-stage production</a>; chứng minh đổi chỗ hai việc kề nhau trong <a href="https://web-static.stern.nyu.edu/om/faculty/pinedo/scheduling/dortmund_slides.pdf" target="_blank" rel="noopener">bài giảng Schwiegelshohn, phần WSPT</a>.</p>
+            <h3>“Greedy” trên bảng kết quả có nghĩa gì?</h3>
+            <p>Ứng dụng chạy lần lượt LPT → EDD → WSPT, tính F cho cả ba và giữ lịch có F thấp nhất. Chỉ thay khi F <strong>nhỏ hơn nghiêm ngặt</strong>; hòa thì giữ quy tắc xuất hiện trước. Vì vậy nếu cùng F, thứ tự ưu tiên là LPT rồi EDD rồi WSPT. Không dùng makespan để phá hòa. Runtime Greedy là tổng thời gian ba lần chạy/đánh giá. Ví dụ này Greedy chọn EDD với F = 48.</p>
+            <h3>Chi phí tính toán</h3>
+            <p>Một quy tắc cần O(n log n) để sắp xếp và O(nm) để quét danh sách m máy cho n việc: <strong>O(n log n + nm)</strong>, không phải O(n log m) vì từng máy được kiểm tra lần lượt. Bộ nhớ O(n+m) gồm bản sắp xếp, lịch và giờ rảnh. Chạy ba quy tắc chỉ thêm hệ số hằng; hữu ích làm đường cơ sở nhanh cho mọi bộ dữ liệu hợp lệ.</p>
+        </section>
+        <section id="theory-bb" class="theory-section">
+            <span class="section-number">03 / B&amp;B</span><h2>Nhánh và cận: tìm có chứng minh</h2>
+            <h3>Trực giác và không gian nghiệm</h3>
+            <p>Branch and Bound (B&amp;B - nhánh và cận) thử các quyết định xếp việc, nhưng ngừng khám phá một nhánh ngay khi biết nhánh đó không thể tốt hơn lịch đang giữ. Nút gốc là chưa xếp việc nào; một nhánh chọn <strong>một việc còn lại và một máy</strong>. Nút lá đã xếp đủ n việc. Trạng thái gồm tập R chưa xếp, giờ rảnh a của các máy, lịch đang xây và chi phí g đã phát sinh.</p>
+            <p>B&amp;B không cố định thứ tự EDD: danh sách ban đầu chỉ được sắp (d,p) để quyết định thứ tự <em>thử nhánh</em>. Ở mỗi nút nó vẫn duyệt từng việc còn lại và từng máy. Đây là khác biệt quyết định so với cách chỉ thử phân máy theo một thứ tự cố định.</p>
+            <h3>Cận trên và cận dưới</h3>
+            <p>Nghiệm tốt nhất hiện có, còn gọi là nghiệm đương nhiệm, là lịch khả thi thật. Giá trị U của nó là <strong>cận trên</strong> của giá trị tối ưu trong bài toán tối thiểu hóa. B&amp;B khởi tạo U bằng lịch Greedy EDD, nên ngay cả hết giờ vẫn có lịch trả về.</p>
+            <div class="formula">a<sub>min</sub> = min<sub>k</sub> a<sub>k</sub><br>LB = g + ∑<sub>i∈R</sub> w<sub>i</sub> max(0, a<sub>min</sub> + p<sub>i</sub> − d<sub>i</sub>)</div>
+            <p>LB là <strong>cận dưới</strong>: giả vờ tất cả việc còn lại đều có thể bắt đầu ở máy rảnh sớm nhất, bỏ qua tranh chấp máy. Thực tế mỗi việc không thể bắt đầu trước a<sub>min</sub>; do w không âm, chi phí thật không thể nhỏ hơn tổng giả định này. Cận thường lỏng vì nhiều việc không thể cùng dùng một máy, nhưng vẫn an toàn để cắt nhánh với dữ liệu hợp lệ.</p>
+            <p>Cắt nếu g ≥ U, hoặc LB ≥ U, hoặc chi phí g′ sau khi thêm việc ≥ U. Một lịch bằng U không giúp cải thiện F nên cũng bị cắt. Khi đến lá với g &lt; U, thay lịch tốt nhất bằng bản sao lịch hiện tại và đặt U = g.</p>
+            <pre class="pseudocode" tabindex="0">Đầu vào: danh sách công việc, m; giới hạn mặc định 5 giây
+Đầu ra: lịch tốt nhất, F và trạng thái chứng minh
+Nếu n &gt; 10: trả None. Nếu m &lt; 1: báo lỗi.
+Sắp danh sách ban đầu theo (d,p); U ← F(lịch EDD).
+DFS(R,a,lịch,g):
+  Nếu hết giờ: đánh dấu TIME_LIMIT; dừng nhánh.
+  Nếu g ≥ U: cắt.
+  Nếu R rỗng: U ← g; sao chép lịch; trả.
+  Tính LB; nếu LB ≥ U: cắt.
+  Với từng việc i trong R:
+    Với máy k theo (a[k],k) tăng:
+      Bỏ qua nếu đã thử máy có cùng a[k].
+      Tính S,C,g′; bỏ qua nếu g′ ≥ U.
+      Thêm i vào k; DFS(R\{i},a′,lịch′,g′).
+      Hoàn tác lịch và a[k].
+Trả OPTIMAL nếu hoàn tất tìm kiếm; ngược lại TIME_LIMIT.</pre>
+            <h3>Cây nhỏ tính tay - ví dụ riêng, một máy</h3>
+            {{ table(['Việc','p','d','w'], [['A',4,1,1],['B',1,2,10],['C',2,7,1]]) }}
+            <p>EDD khởi tạo A–B–C: C = [4,5,7], T = [3,3,0], wT = [3,30,0], U = 33. Ở gốc, a<sub>min</sub> = 0 nên LB = 3. Cây dưới minh họa thứ tự thử các nhánh:</p>
+            <pre class="search-tree" tabindex="0" aria-label="Cây nhánh và cận minh họa">Gốc: a=0, g=0, LB=3, U=33
+├─ A: a=4, g=3
+│  LB = 3 + 10×(4+1−2) + 0 = 33
+│  CẮT vì LB ≥ U (33 ≥ 33)
+├─ B: a=1, g=0, LB=4 &lt; 33 → MỞ RỘNG
+│  ├─ A: a=5, g=4, LB=4
+│  │  └─ C: a=7, g=4 → LÁ; cập nhật U=4
+│  └─ C: a=3, g=0
+│     LB = 0 + 1×(3+4−1) = 6 ≥ 4 → CẮT
+└─ C: a=2, g=0
+   LB = 1×(2+4−1) + 10×(2+1−2) = 15 ≥ 4 → CẮT</pre>
+            <p>Nghiệm mới B–A–C có C = [1,5,7] theo thứ tự chạy, T = [0,4,0], wT = [0,4,0], F = 4. Đã xét/cắt hết nhánh hợp lệ, nên 4 được chứng minh tối ưu trong ví dụ riêng này.</p>
+            <p><strong>Loại đối xứng:</strong> nếu hai máy cùng a = 0 thì gán J1 vào M1 hay M2 chỉ đổi tên máy, không tạo tình huống chi phí khác. Mỗi lần chọn một việc, thuật toán chỉ thử một máy cho mỗi giá trị a khác nhau. Việc tìm kiếm kết thúc khi đã xét hết nhánh cần thiết hoặc hết thời gian.</p>
+            <h3>Trở lại bộ dữ liệu chung</h3>
+            {{ show_schedule(theory.results.bb) }}
+            <p>EDD đã cho U = 48. B&amp;B hoàn tất tìm kiếm và không tìm lịch thấp hơn; <strong>đã chứng minh tối ưu</strong>. Tổng 30 + 18 = 48. Vét cạn độc lập cũng cho 48; không dùng tên thuật toán làm bằng chứng tối ưu.</p>
+            <h3>Khi nào được kết luận tối ưu?</h3>
+            <p>Chỉ khi tìm kiếm hoàn tất, các cận hợp lệ (đặc biệt p,w không âm), và không hết thời gian. Nếu 5 giây hết trước, trả <code>TIME_LIMIT</code>, chưa chứng minh tối ưu: đó chỉ là lịch tốt nhất đã tìm thấy. n &gt; 10 không chạy B&amp;B trong phòng thử nghiệm. Các cận trên chỉ hợp lệ với thời lượng và trọng số không âm.</p>
+            <details><summary>Phân tích độ phức tạp</summary><p>Bỏ qua cắt nhánh và thời gian, tầng k có nhiều nhất n!/(n−k)! × m<sup>k</sup> nút; n!m<sup>n</sup> là số lá thô trước loại đối xứng. Có thể dùng cận trên bảo thủ O((n+1)n!m<sup>n</sup>) cho tổng số nút. Một nút còn r việc tính LB O(r), tạo r lát danh sách O(r²), và sắp m máy riêng cho từng việc O(rm log(m+1)), cộng O(rm) để thử nhánh. Vì vậy một cận trên bảo thủ là O((n+1)n!m<sup>n</sup> × (n²+nm log(m+1))). Đây là phân tích xấu nhất, không phải thời gian chắc chắn sẽ chạy với giới hạn 5 giây. Do DFS giữ các danh sách R ở nhiều tầng, bộ nhớ đỉnh O(n²+nm+m), kể cả các danh sách máy đang được lặp; không lưu cả cây.</p></details>
+            <p>Ưu điểm: có thể chứng minh chất lượng; nhược điểm: bùng nổ tổ hợp. Phù hợp bộ nhỏ và kiểm tra đối chứng; lịch khởi tạo tốt giúp cắt nhánh sớm.</p>
+        </section>
+
+        <section id="theory-ga" class="theory-section">
+            <span class="section-number">04 / GA</span><h2>Di truyền: phối hợp nhiều thứ tự xếp việc</h2>
+            <h3>Trực giác và biểu diễn</h3>
+            <p>Genetic Algorithm (GA - thuật toán di truyền) giữ nhiều thứ tự công việc như một quần thể. Qua nhiều thế hệ, nó giữ các cá thể tốt, ghép một phần của hai cha mẹ và thỉnh thoảng đổi chỗ để có thứ tự mới. Nó không chọn lịch bằng chứng minh toàn bộ không gian nghiệm.</p>
+            <p>Một cá thể là <strong>hoán vị chỉ số mảng</strong> 0…n−1, không phải trực tiếp id. Với ví dụ này chỉ số 0 tương ứng J1, chỉ số 4 tương ứng J5. Hợp lệ khi mỗi chỉ số xuất hiện đúng một lần. Quy tắc giải mã đọc từ trái sang phải và luôn chọn máy có (giờ rảnh, chỉ số máy) nhỏ nhất; vì vậy hoán vị hợp lệ tự tạo lịch không chồng lấn cho p không âm, m ≥ 1.</p>
+            <div class="formula">Điểm đánh giá cá thể π = F(lịch giải mã từ π)<br>Ưu tiên F nhỏ hơn; điểm đánh giá được dùng trực tiếp, không lấy nghịch đảo.</div>
+            <p>“Fitness” thường là thước đo thích nghi trong GA, nhưng biến thể đang dùng đánh giá trực tiếp bằng F để xếp tăng. Không có roulette (chọn theo vòng quay xác suất), giải đấu, tìm kiếm cục bộ, hay điều kiện dừng do hội tụ.</p>
+            <h3>Các bước tiến hóa</h3>
+            <ol><li>Khởi tạo P hoán vị ngẫu nhiên; không ưu tiên sẵn cá thể EDD.</li><li>Giải mã P cá thể, tính F và sắp tăng; hòa giữ thứ tự có sẵn trong quần thể.</li><li>Giữ e = max(2, ⌊P/10⌋) cá thể tốt nhất: elitism, nghĩa là bảo tồn cá thể ưu tú.</li><li>Mỗi lượt sinh, nếu số ngẫu nhiên nhỏ hơn tỷ lệ lai c: chọn độc lập hai cha mẹ đồng xác suất trong nhóm đầu max(5, ⌊P/4⌋); hai cha mẹ có thể trùng nhau.</li><li>Lai hai chiều tạo hai con. Mỗi con độc lập bị đổi chỗ hai vị trí với xác suất μ. Nếu không lai, thêm một hoán vị ngẫu nhiên mới; nhánh này không áp dụng thêm phép đột biến.</li><li>Lặp đến đủ số lượng, cắt phần thừa về P; làm tiếp đến G thế hệ.</li></ol>
+            <pre class="pseudocode" tabindex="0">Đầu vào: danh sách công việc,m; P=60,G=120,c=0.8,μ=0.1
+Đầu ra: F và lịch tốt nhất của thế hệ được đánh giá cuối
+Nếu n≤1: giải mã trực tiếp.
+Q ← P hoán vị ngẫu nhiên
+Lặp G lần:
+  Q ← giải mã và đánh giá mọi cá thể; sắp theo F tăng
+  Tốt nhất ← cá thể đầu Q
+  Q mới ← e cá thể ưu tú
+  Trong khi Q mới chưa đủ P cá thể:
+    Nếu số ngẫu nhiên trong [0,1) nhỏ hơn c:
+      Chọn 2 cha mẹ trong nhóm đầu
+      Lai hai chiều; mỗi con đột biến với xác suất μ
+      Thêm 2 con
+    Ngược lại: thêm 1 hoán vị ngẫu nhiên
+  Q ← P cá thể đầu của Q mới
+Trả cá thể tốt nhất đã được đánh giá</pre>
+            <p>Thế hệ con sinh trong vòng cuối <strong>chưa được đánh giá</strong> trước khi trả kết quả. Thuật toán không lưu một kho nghiệm tốt nhất toàn cục riêng; trong miền tham số giao diện hợp lệ, elitism giữ lại cá thể tốt nên điểm tốt nhất qua các lần đánh giá không tăng. Trong phòng thử nghiệm, P ≥ 20 và G ≥ 20 để có quần thể và số thế hệ phù hợp.</p>
+            <h3>Lai theo thứ tự và đột biến - tính tay</h3>
+            <p>Cha A có chỉ số [0,1,2,3,4], cha B [4,3,2,1,0]. Chọn hai vị trí <strong>1 và 3, tính từ 0, gồm cả hai đầu</strong>. Copy đoạn A[1…3] = [1,2,3] vào con: [_,1,2,3,_]. Quét B từ đầu, bỏ các chỉ số đã có: còn [4,0]; điền các ô trống từ trái sang phải: [4,1,2,3,0]. Khác một số biến thể OX chuẩn, ở đây không quét vòng từ điểm cắt.</p>
+            <p>Con tương ứng [J5,J2,J3,J4,J1]. Đột biến đổi vị trí 0 và 4 tạo [0,1,2,3,4], tức [J1,J2,J3,J4,J5]. Không cần sửa trùng/thiếu vì cha mẹ hợp lệ và toán tử đã bỏ những chỉ số có trong đoạn copy. Cha mẹ phải là hoán vị hợp lệ trước khi áp dụng toán tử.</p>
+            <div class="theory-table" role="region" tabindex="0" aria-label="Toán tử GA"><table><thead><tr><th>Cá thể</th><th>Hoán vị chỉ số</th><th>Thứ tự id công việc</th><th>F sau giải mã</th></tr></thead><tbody>{% for op in theory.operators %}<tr><td>{{ op.label }}</td><td>{{ op.indices | join(', ') }}</td><td>{{ op.ids | join(' → ') }}</td><td>{{ op.result.objective }}</td></tr>{% endfor %}</tbody></table></div>
+            <details><summary>Xem phép tính đầy đủ cho con sau lai và sau đột biến</summary>{{ show_schedule(theory.operators[2].result, true) }}{{ show_schedule(theory.operators[3].result, true) }}</details>
+            <p>Lai cho F = 78; sau đột biến F = 82, <strong>có thể xấu đi</strong>. GA vẫn tạo con xấu để đa dạng hóa; đánh giá, chọn lọc và elite mới tạo áp lực cải thiện. Tỷ lệ c là xác suất thực hiện nhánh lai trong một lượt sinh, không phải tỷ lệ vị trí được copy. μ là xác suất đổi chỗ trên mỗi con, không phải xác suất cho từng gen.</p>
+            <h3>Chạy GA trên bộ dữ liệu chung</h3>
+            <p>Ví dụ cố định seed = 2718, P = 20, G = 30, c = 0,8, μ = 0,1. Seed là giá trị khởi tạo cho quá trình sinh số ngẫu nhiên, giúp tái hiện ví dụ. Khi đổi seed hoặc cấu hình, lịch có thể khác dù F bằng nhau. Nên chạy nhiều lần khi nghiên cứu chất lượng.</p>
+            {{ show_schedule(theory.results.ga) }}
+            <p>J1 hoàn tất 9 nên phạt 30; J2 hoàn tất 14 nên phạt 18. F = 48 là tốt nhất trong ví dụ và trùng giá trị tối ưu được chứng minh bởi vét cạn/solver; <strong>GA tự nó không chứng minh tối ưu</strong>.</p>
+            <h3>Ưu nhược điểm, tham số và độ phức tạp</h3>
+            <p>P lớn tăng đa dạng và chi phí mỗi thế hệ; G lớn cho thêm lượt tiến hóa nhưng không bảo đảm tiến bộ. c cao tăng số con lai, μ cao tăng xáo trộn và có thể phá cấu trúc tốt. GA phù hợp tìm lịch tốt trong bộ lớn hơn ngưỡng B&amp;B; nhược điểm là phải thử tham số, kết quả ngẫu nhiên và phụ thuộc quy tắc giải mã cố định, không có chứng minh duyệt hết các lịch phân máy.</p>
+            <details><summary>Độ phức tạp theo các bước thực hiện</summary><p>Giải mã một cá thể O(nm+n+m). Mỗi thế hệ đánh giá P cá thể và sắp P điểm O(P(nm+n+m)+P log P). Phép lai kiểm tra từng phần tử có nằm trong đoạn đã chọn hay không, nên một lần lai xấu nhất O(n²), không phải O(n). Chọn cha mẹ bằng lát nhóm đầu tốn O(P) mỗi lượt. Cận trên cho G thế hệ là O(G[P(nm+n+m)+P log P+Pn²+P²]); nếu không dùng nhánh lai thì phần tương ứng giảm. Bộ nhớ O(P(n+m)) vì quần thể được đánh giá giữ cả lịch của P cá thể, ngoài các hoán vị. Phân tích coi các phép toán số là chi phí hằng.</p></details>
+        </section>
+        <section id="theory-ts" class="theory-section">
+            <span class="section-number">05 / TS</span><h2>Tìm kiếm tabu: dám bước lùi, nhớ đường vừa đi</h2>
+            <h3>Trực giác và công thức</h3>
+            <p>Tabu Search (TS - tìm kiếm có danh sách cấm tạm thời) chỉ giữ một lời giải hiện tại, thử đổi chỗ hai việc và đi đến hàng xóm tốt nhất được phép. Nếu mọi hàng xóm đều xấu hơn, nó vẫn đi để thoát một vùng đang bị mắc kẹt. Một bộ nhớ ngắn hạn chặn việc đảo ngược quá sớm.</p>
+            <div class="formula">N(π) = {swap(π, i, j) : 0 ≤ i &lt; j &lt; n}<br>Chọn π′ có F nhỏ nhất trong N(π) được phép.<br>Được phép ⇔ hết tabu hoặc F(π′) &lt; F<sub>best</sub>.</div>
+            <p>Cặp tabu là cặp <strong>chỉ số công việc</strong> đã đổi, được chuẩn hóa tăng; không phải cặp vị trí. Aspiration (ngoại lệ vượt cấm) chỉ áp dụng khi cải thiện tốt nhất toàn cục, không chỉ tốt hơn lịch hiện tại. Cùng quy tắc giải mã với GA, nên TS không trực tiếp chọn tùy ý việc–máy hay thời gian bắt đầu.</p>
+            <h3>Các bước và phá hòa</h3>
+            <pre class="pseudocode" tabindex="0">Đầu vào: danh sách công việc,m; K=100 vòng, tenure=7
+Đầu ra: chi phí và lịch tốt nhất
+π ← sắp chỉ số theo d tăng, hòa giữ thứ tự đầu vào
+Tốt nhất ← giải mã π; tabu ← rỗng
+Với t=0,…,K−1:
+  candidate ← không có
+  Duyệt i tăng, rồi j từ i+1 tăng:
+    move ← cặp chỉ số công việc π[i],π[j] đã sắp tăng
+    π′ ← bản sao π, đổi hai vị trí i,j
+    (F′,lịch′) ← giải mã π′
+    Nếu tabu[move]&gt;t và F′≥F_best: bỏ qua
+    Giữ candidate nếu chưa có hoặc F′ nhỏ hơn nó
+  Nếu không có candidate: dừng
+  π ← candidate, dù nó có thể xấu hơn hiện tại
+  Xóa tabu hết hạn; tabu[move] ← t+tenure+1
+  Nếu F_current&lt;F_best: lưu riêng best
+Trả lịch tốt nhất, không trả lịch hiện tại cuối.</pre>
+            <p>Hòa F giữa các hàng xóm giữ cặp (i,j) đầu tiên do chỉ thay khi nhỏ hơn. Khởi tạo TS chỉ xét d, <strong>không xét p để phá hòa như Greedy EDD</strong>. Với dữ liệu chung, thứ tự đầu là [1,5,3,2,4] vì J1 đứng trước J5 trong đầu vào.</p>
+            <h3>Ba bước đầu trên dữ liệu chung</h3>
+            <p>Khởi tạo có F = 48. Vòng đầu thử 10 phép đổi chỗ. Swap J1↔J5 giữ F = 48 và là tốt nhất được phép, nên được chọn. Vòng tiếp, đảo lại J1↔J5 bị tabu; F không thấp hơn best nên không được vượt cấm. Thuật toán đi đến F = 56 nhưng vẫn giữ best = 48.</p>
+            <div class="theory-table" role="region" tabindex="0" aria-label="Dấu vết TS"><table><thead><tr><th>Vòng</th><th>Cặp đổi</th><th>Thứ tự mới</th><th>F hiện tại</th><th>F tốt nhất</th></tr></thead><tbody>{% for step in theory.ts_trace %}<tr><td>{{ step.iteration }}</td><td>J{{ step.move | join(' ↔ J') }}</td><td>{{ step.ids | join(' → ') }}</td><td>{{ step.current }}</td><td>{{ step.best }}</td></tr>{% endfor %}</tbody></table></div>
+            <p>Phép đổi ở t = 0 lưu hạn 8, nên bị cấm ở t = 1…7, hết cấm tại t = 8 (vòng người đọc đếm là 9). Nếu một phép đang tabu tìm được F = 47, nó được chấp nhận vì 47 &lt; 48. Đây là tình huống giải thích ngoại lệ, không phải giá trị đã xuất hiện trong bộ ví dụ có tối ưu 48.</p>
+            <details><summary>Lịch hiện tại F = 56 ở vòng 2 khác lịch được trả về</summary><p>Thứ tự [3,1,5,2,4]: M1 chạy J3 0–2, J5 2–6, J2 6–14; M2 chạy J1 0–9, J4 9–14. C của J1,J2,J3,J4,J5 là [9,14,2,14,6]; T = [5,3,0,0,2]; wT = [30,18,0,0,8]; tổng 56. Bộ nhớ best vẫn là 48.</p></details>
+            {{ show_schedule(theory.results.ts) }}
+            <p>Lịch trả về trên bộ chung có tổng 48. TS không dùng ngẫu nhiên trong cài đặt này; cùng đầu vào và tham số cho cùng kết quả. Thời hạn cấm giữ cố định trong suốt lượt tìm kiếm. Dừng khi hết K hoặc không có hàng xóm hợp lệ; với n = 0 hay 1, lân cận rỗng nên trả lịch khởi tạo.</p>
+            <h3>Đánh giá và chi phí</h3>
+            <p>Ưu điểm là dễ kiểm soát, luôn trả kết quả không kém khởi tạo nếu dữ liệu hợp lệ; chấp nhận bước xấu giúp khám phá. Nhược điểm là có thể kẹt vì tất cả bước bị cấm, tốn nhiều lần giải mã và nhạy với tenure. Tenure dài chống quay vòng tốt hơn nhưng làm ít bước được phép. Không có bảo đảm tối ưu.</p>
+            <p>Với n việc, m máy, tối đa K vòng, mỗi vòng có n(n−1)/2 hàng xóm; mỗi hàng xóm sao chép O(n), giải mã O(nm+n+m). Thời gian O(n log n + K n²(nm+n+m)); bộ nhớ O(n+m+min(n²,K)) gồm lịch hiện tại/tốt nhất và các cặp tabu còn lưu. Các hàng xóm được xét tuần tự, không giữ toàn bộ các lịch hàng xóm.</p>
+            <p class="source-note">Cơ chế bộ nhớ ngắn hạn và ngoại lệ vượt cấm: <a href="https://leeds-faculty.colorado.edu/glover/TS%20-%20Part%20I-ORSA-aw.pdf" target="_blank" rel="noopener">Glover (1989), Tabu Search—Part I</a>. Ví dụ sử dụng thời hạn cấm 7 vòng.</p>
+        </section>
+
+        <section id="theory-cp" class="theory-section">
+            <span class="section-number">06 / CP-SAT</span><h2>Mô hình ràng buộc: để solver chọn cả máy lẫn lịch</h2>
+            <h3>Trực giác</h3>
+            <p>CP-SAT là bộ giải của Google OR-Tools, kết hợp lập trình ràng buộc (Constraint Programming) và kỹ thuật SAT, tức kiểm tra tính thỏa của các mệnh đề logic. Thay vì chốt một quy tắc xếp hàng, ta mô tả điều gì được phép và cần tối thiểu cái gì. Solver tự quyết định máy, thời điểm và thứ tự.</p>
+            <p>Nó không bị ràng buộc vào quy tắc giải mã của GA/TS. Giới hạn S,C ≤ H = ∑p là đủ cho mục tiêu này: mọi việc có thể chạy tuần tự trên một máy trong H giờ; với một cách phân máy/thứ tự bất kỳ, bỏ khoảng chờ chỉ làm C giảm và không tăng F khi w ≥ 0. Không cần cho phép một lịch hoàn thành sau H để đạt F tốt hơn.</p>
+            <h3>Biến và ràng buộc đúng với mô hình</h3>
+            <div class="formula">0 ≤ S<sub>i</sub>, C<sub>i</sub> ≤ H (số nguyên)<br>x<sub>ik</sub> ∈ {0,1}; &nbsp; ∑<sub>k=1…m</sub> x<sub>ik</sub> = 1<br>x<sub>ik</sub> = 1 ⇒ I<sub>ik</sub> = [S<sub>i</sub>, C<sub>i</sub>), C<sub>i</sub> = S<sub>i</sub> + p<sub>i</sub><br>NoOverlap({I<sub>ik</sub> hiện diện trên máy k})<br>T<sub>i</sub> = max(0,C<sub>i</sub>−d<sub>i</sub>); &nbsp; min ∑w<sub>i</sub>T<sub>i</sub></div>
+            <p>x<sub>ik</sub> = 1 nghĩa là chọn máy k cho việc i. Optional interval là khoảng thời gian chỉ có hiệu lực khi biến chọn của nó bằng 1. “Chọn đúng một” ngăn bỏ sót hoặc nhân đôi công việc. NoOverlap ngăn hai khoảng có thời lượng dương chồng nhau trên một máy. Khoảng được hiểu nửa mở [S,C), nên một việc được bắt đầu đúng lúc việc trước kết thúc.</p>
+            <p>Mỗi việc dùng chung S,C giữa m interval tùy chọn. Miền T là [0,max(0,H−d)]. Hàm max được ràng buộc bằng đẳng thức thật, không chỉ bằng một cận lỏng. CP-SAT yêu cầu p,d,w là số nguyên, từ chối bool và float kể cả 1.0; p,w không âm, d được phép âm. Giá trị quá lớn vượt khả năng số nguyên của solver có thể dẫn tới mô hình không hợp lệ, không được xem là một lịch F = 0.</p>
+            <pre class="pseudocode" tabindex="0">Đầu vào: danh sách công việc,m; thời gian tối đa 10 giây
+Đầu ra: chi phí, lịch, trạng thái, cận dưới và kết luận tối ưu
+1. Kiểm tra kiểu nguyên và miền dữ liệu.
+2. Nếu thiếu OR-Tools: trả UNAVAILABLE, lịch và F là null.
+3. Đặt H=Σp. Tạo S,C và m biến chọn cho mỗi việc.
+4. Chọn đúng 1 máy; tạo optional interval cho từng việc–máy.
+5. Thêm NoOverlap cho từng máy.
+6. Tạo T=max(0,C−d), tối thiểu ΣwT.
+7. Gọi solver với giới hạn 10 giây.
+8. Nếu OPTIMAL hoặc FEASIBLE: lấy máy được chọn,
+   đọc S,C; sắp lịch mỗi máy theo (S,C); tính lại F nguyên.
+9. Nếu chưa có lịch: báo chưa có lời giải.
+10. chỉ kết luận tối ưu nếu trạng thái OPTIMAL.</pre>
+            <h3>Ví dụ: kiểm tra một nghiệm của solver</h3>
+            <p>Không giả vờ có thứ tự nhánh nội bộ cố định: solver có lan truyền ràng buộc và tìm kiếm riêng. Bảng sau là <strong>lịch thực sự trả về đã lưu</strong>, đọc theo S tăng, hòa theo máy; không phải dấu vết quyết định của CP-SAT. Mỗi máy chỉ có một chuỗi liên tục; J1 trễ 5 giờ, J2 trễ 3 giờ, các việc khác không trễ.</p>
+            {{ show_schedule(theory.results.cp_sat) }}
+            <p>Ở lần sinh minh họa, trạng thái là OPTIMAL, F = 48 và cận dưới tốt nhất cũng là 48. Solver đã đóng khoảng cách giữa cận dưới và lịch khả thi. Vét cạn độc lập xác nhận 48. Nếu có nhiều lịch cùng F, solver có thể trả một lịch khác; không có phá hòa theo makespan, id hay máy trong mô hình. Việc sắp đầu ra theo (S,C) chỉ giúp trình bày.</p>
+            {{ table(['Trạng thái','Ý nghĩa khi đọc kết quả'], [['OPTIMAL','Đã chứng minh F tối ưu, không đồng nghĩa makespan nhỏ nhất'],['FEASIBLE','Có lịch khả thi; chưa chứng minh F tối ưu'],['UNKNOWN','Dừng khi chưa tìm được lịch; chưa có chi phí và lịch để báo cáo'],['INFEASIBLE','Chứng minh mô hình vô nghiệm; không có lịch'],['MODEL_INVALID','Mô hình không hợp lệ; không có lịch'],['UNAVAILABLE','Thiếu OR-Tools; thuật toán khác vẫn chạy']]) }}
+            <p>Cận tốt nhất là cận dưới do bộ giải báo, không phải chi phí một lịch. Một cận bằng 0 khi chưa có lịch không có nghĩa F đã bằng 0. Giới hạn 10 giây là thời gian tối đa yêu cầu, có thể dừng sớm khi đã chứng minh; chi phí khởi tạo/mô hình/lấy lịch nằm ngoài phần tìm kiếm nên tổng runtime có thể lớn hơn 10 giây.</p>
+            <h3>Ưu nhược điểm và độ phức tạp</h3>
+            <p>Ưu điểm: mô hình trực tiếp mục tiêu, có cận và trạng thái chứng minh, dễ bổ sung ràng buộc khi phát triển. Nhược điểm: cần thư viện OR-Tools, dữ liệu nguyên, thời gian khó dự đoán ở bộ lớn. Mô hình gồm O(nm+n) biến/interval và ràng buộc tổng hợp, tốn O(nm+n) thời gian/bộ nhớ để tạo mô hình (giả thiết phép xử lý biểu thức có chi phí theo kích thước biểu thức). Tìm kiếm tổ hợp của solver không có bảo đảm thời gian đa thức cho mô hình này; bộ nhớ và thời gian tìm kiếm không thể suy ra chỉ từ O(nm) kích thước mô hình. Không thể đánh giá chi phí tìm kiếm chỉ bằng số lượng biến.</p>
+            <p class="source-note">Nguồn chính thức: <a href="https://developers.google.com/optimization/cp/cp_solver" target="_blank" rel="noopener">Google OR-Tools, CP-SAT Solver</a> (số nguyên và trạng thái); <a href="https://developers.google.com/optimization/scheduling/job_shop" target="_blank" rel="noopener">The Job Shop Problem</a> (interval và NoOverlap). Ví dụ job shop của tài liệu có ràng buộc khác dự án; chỉ tham khảo các thành phần mô hình, không chuyển mục tiêu makespan của ví dụ đó vào đây.</p>
+        </section>
+
+        <section id="theory-comparison" class="theory-section">
+            <span class="section-number">07 / ĐỐI CHIẾU</span><h2>Cùng dữ liệu, đọc đúng khác biệt</h2>
+            <p>Các lịch, bảng S,C,T,wT và biểu đồ ở từng mục đều dùng năm công việc đầu tài liệu. Không đo runtime ở đây vì mục đích là theo dõi phép tính. Các lịch minh họa đã được tính và kiểm chứng sẵn; chuyển tab không chạy lại thuật toán.</p>
+            <div class="theory-table" role="region" tabindex="0" aria-label="So sánh kết quả ví dụ"><table><thead><tr><th>Phương pháp</th><th>F</th><th>Cmax</th><th>Kết luận của lần minh họa</th></tr></thead><tbody>{% for key, item in theory.results.items() %}<tr><td>{{ item.label }}</td><td>{{ item.objective }}</td><td>{{ item.makespan }}</td><td>{% if item.optimal %}Đã chứng minh F tối ưu{% elif item.objective == theory.optimum %}Đạt giá trị tối ưu đã biết; tự thuật toán không chứng minh{% else %}Chưa đạt giá trị tối ưu đã biết{% endif %}</td></tr>{% endfor %}<tr><td>Greedy tổng hợp (EDD)</td><td>48</td><td>14</td><td>Chọn tốt nhất ba quy tắc; không phải nhóm thứ sáu</td></tr><tr><td>Vét cạn độc lập</td><td>{{ theory.optimum }}</td><td>—</td><td>Duyệt mọi thứ tự và mọi gán máy; chỉ dùng xác minh</td></tr></tbody></table></div>
+            <p>LPT cân việc dài nhưng làm J3/J5 quá muộn. WSPT phục vụ trọng số theo tỷ lệ nhưng để J1 đến giờ 15. EDD bảo vệ J3 và J5 đúng hạn nên giảm chi phí mạnh. GA và TS cũng đạt 48 nhưng không biết rằng không còn lịch tốt hơn; B&amp;B và CP-SAT báo chứng minh hoàn tất.</p>
+            <p><strong>Vét cạn độc lập:</strong> 5! hoán vị × 2<sup>5</sup> cách phân máy = 3.840 tổ hợp thô. Mỗi việc được nối vào máy đã chọn, không dùng quy tắc giải mã chọn máy sớm nhất. Với mọi việc sẵn sàng từ 0 và mục tiêu không giảm khi C tăng, chỉ cần xét lịch không có khoảng chờ trên từng máy: bỏ khoảng chờ không thể làm xấu F.</p>
+            <p><strong>Kiểm chứng dữ liệu:</strong> mỗi việc đúng một lần, đúng p, S không âm, không chồng lấn, mã máy đúng, tổng wT khớp. GA dùng seed/cấu hình ghi ở mục GA. Ví dụ cố định không làm thay đổi dữ liệu hoặc kết quả thử nghiệm của bạn.</p>
+        </section>
+
+        <section id="theory-summary" class="theory-section">
+            <span class="section-number">08 / TỔNG KẾT</span><h2>Nên dùng gì, và nên tin điều gì?</h2>
+            {{ table(['Nhóm','Tính ngẫu nhiên','Bảo đảm tối ưu F','Dùng khi'], [['Greedy (LPT/EDD/WSPT)','Không','Không, trừ khi tự có cận chứng minh, ví dụ F=0','Cần kết quả nhanh, đường cơ sở hoặc lịch khởi tạo'],['GA','Có; seed và cấu hình ảnh hưởng','Không','Muốn khám phá nhiều thứ tự, chấp nhận thử nhiều lần'],['B&B','Không; hết giờ phụ thuộc tốc độ máy','Có nếu tìm kiếm hoàn tất với cận hợp lệ','Bộ nhỏ ≤10 việc, đối chứng chất lượng'],['TS','Không trong biến thể hiện tại','Không','Cải thiện EDD bằng đổi chỗ với ngân sách số vòng'],['CP-SAT','Có thể trả các lịch khác nhau cùng chi phí','Chỉ khi OPTIMAL','Cần mô hình trực tiếp, cận và trạng thái khả thi/tối ưu']]) }}
+            <h3>Những nhầm lẫn thường gặp</h3>
+            <dl class="theory-faq"><dt>“Makespan nhỏ nhất là thuật toán tốt nhất?”</dt><dd>Mục tiêu chính là F. Ứng dụng chỉ xét makespan rồi runtime khi đề xuất giữa các lịch có F bằng nhau; không biến nó thành mục tiêu của solver.</dd><dt>“EDD quyết định máy nào?”</dt><dd>EDD chỉ quyết định việc nào được xét trước. Greedy và quy tắc giải mã chọn máy rảnh sớm nhất; B&amp;B và CP-SAT có quyền tìm các cách phân máy khác.</dd><dt>“Tên exact solver nghĩa là luôn tối ưu?”</dt><dd>Chỉ tin kết luận khi có trạng thái chứng minh. TIME_LIMIT và FEASIBLE không tương đương OPTIMAL.</dd><dt>“Objective và fitness là một công thức nghịch đảo?”</dt><dd>Ở dự án, GA xếp trực tiếp theo F tăng; không có công thức fitness nghịch đảo. Dùng thuật ngữ chung phải phân biệt với cách cài cụ thể.</dd><dt>“Một lần GA tốt hơn là GA luôn tốt hơn?”</dt><dd>Không. Cần nhiều bộ dữ liệu, nhiều seed, cấu hình và ngân sách tính toán công bằng. Runtime trong phòng thử nghiệm chỉ là thời gian một lần chạy.</dd><dt>“F = 0 nghĩa là chưa có kết quả?”</dt><dd>Không. F = 0 là lịch không chịu phạt (hoặc chỉ các việc w=0 trễ). Chưa có lịch được hiển thị bằng dấu gạch và trạng thái tương ứng.</dd></dl>
+            <p>Để học: bắt đầu với ba quy tắc Greedy, tự tính F, sau đó theo cây B&amp;B để hiểu chứng minh; dùng GA/TS để thấy khám phá không gian lời giải; đọc CP-SAT để chuyển bài toán thành ràng buộc. Để thử nghiệm: so sánh cùng một bộ việc và cùng m, giữ nguyên điều kiện, ghi cả chất lượng và ngân sách chạy.</p>
+        </section>
+
+        <section id="theory-sources" class="theory-section">
+            <span class="section-number">09 / NGUỒN</span><h2>Tài liệu và phạm vi đối chiếu</h2>
+            <p>Các tài liệu dưới đây giúp đọc sâu hơn về quy tắc ưu tiên, chứng minh tối ưu và mô hình ràng buộc. Khi tham khảo, cần phân biệt điều kiện của từng bài toán với bài toán máy song song đang học.</p>
+            <ul class="source-list"><li><a href="https://epubs.siam.org/doi/10.1137/0117039" target="_blank" rel="noopener">R. L. Graham (1969), Bounds on Multiprocessing Timing Anomalies, SIAM Journal on Applied Mathematics</a> — bối cảnh lập lịch máy song song/makespan.</li><li><a href="https://onlinelibrary.wiley.com/doi/10.1002/nav.3800030106" target="_blank" rel="noopener">W. E. Smith (1956), Various optimizers for single-stage production</a> — nguồn quy tắc tỷ lệ WSPT.</li><li><a href="https://web-static.stern.nyu.edu/om/faculty/pinedo/scheduling/dortmund_slides.pdf" target="_blank" rel="noopener">U. Schwiegelshohn (2003), Scheduling Problems and Solutions, bài giảng Đại học Dortmund, lưu tại NYU</a> — mục tiêu lập lịch và điều kiện quy tắc một máy.</li><li><a href="https://leeds-faculty.colorado.edu/glover/TS%20-%20Part%20I-ORSA-aw.pdf" target="_blank" rel="noopener">F. Glover (1989), Tabu Search—Part I, ORSA Journal on Computing</a> — tabu và ngoại lệ vượt cấm.</li><li><a href="https://developers.google.com/optimization/cp/cp_solver" target="_blank" rel="noopener">Google OR-Tools, CP-SAT Solver</a> và <a href="https://developers.google.com/optimization/scheduling/job_shop" target="_blank" rel="noopener">The Job Shop Problem</a> — miền nguyên, trạng thái, interval, NoOverlap.</li></ul>
+            <p>Các ví dụ đã được kiểm chứng về tính hợp lệ của lịch và tổng chi phí. Kết quả minh họa không thay thế việc đánh giá trên nhiều bộ dữ liệu và nhiều lần chạy.</p>
+        </section>
+    </article>
+</div>
