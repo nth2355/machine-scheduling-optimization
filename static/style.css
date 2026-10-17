@@ -23,6 +23,24 @@
     --number-font: var(--font-ui);
 }
 * { box-sizing: border-box; }
+/* Giao diện sáng dùng cùng token, không thay DOM hoặc trạng thái thử nghiệm. */
+:root[data-theme="light"] {
+    color-scheme: light;
+    --background: #f6f7f9; --sidebar: #ffffff; --surface: #ffffff;
+    --hover: #edf1f4; --detail-accent: #607086;
+    --text: #202c3d; --muted: #526174; --placeholder: #526174;
+    --line: #c9d1da; --control: #748194;
+    --accent: #17633d; --accent-hover: #104d2e; --on-accent: #ffffff;
+    --graphic-accent: #17633d; --accent-soft: #eaf5ee; --selected-text: #17633d;
+    --attention: #805416; --attention-soft: #fff5e4;
+    --late: #a32727; --late-soft: #fff0ef;
+    --success: #17633d; --success-soft: #eaf5ee;
+    --disabled-bg: #edf1f4; --disabled-text: #526174;
+    --chart-ontime: #dde8f0; --chart-ontime-text: #202c3d;
+    --chart-late: #ffd6d2; --chart-late-stripe: #ffd6d2; --chart-late-text: #802020;
+    --machine-1: #f0f3f6; --machine-2: #e5ebf0; --machine-3: #f0f3f6;
+    --machine-4: #e5ebf0; --machine-5: #f0f3f6; --machine-6: #e5ebf0;
+}
 html { scroll-padding-top: 24px; }
 body { margin: 0; background: var(--background); color: var(--text); font-family: var(--font-ui); font-variant-numeric: tabular-nums; font-size: 15px; line-height: 1.5; }
 a { color: var(--accent); text-underline-offset: 4px; }
@@ -378,4 +396,19 @@ button:disabled { border-style: dashed; }
 button.primary:hover:not(:disabled) { background: var(--accent-hover); }
 .gantt-bar.red, .theory-job.late, .gantt-status-swatch.red {
     background: var(--chart-late); color: var(--chart-late-text); border-color: var(--chart-late-text);
+}
+
+.theme-toggle {
+    display: inline-flex; align-items: center; gap: 10px; flex-shrink: 0;
+    background: var(--surface); color: var(--text); border: 1px solid var(--control);
+    font-size: 14px; min-height: 44px; padding: 8px 12px;
+}
+.theme-toggle:hover { background: var(--hover); }
+.theme-switch-track { width: 36px; height: 22px; border: 1px solid var(--control); border-radius: 12px; padding: 3px; }
+.theme-switch-track > span { display: block; width: 14px; height: 14px; border-radius: 50%; background: var(--text); }
+.theme-toggle[aria-checked="true"] .theme-switch-track { background: var(--accent); border-color: var(--accent); }
+.theme-toggle[aria-checked="true"] .theme-switch-track > span { background: var(--on-accent); transform: translateX(14px); }
+:root[data-theme="light"] .gantt-bar.green { color: var(--chart-ontime-text); }
+@media (max-width: 600px) {
+    .title-row { flex-wrap: wrap; gap: 12px; }
 }
