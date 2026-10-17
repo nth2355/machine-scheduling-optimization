@@ -37,7 +37,7 @@ Giải thích bài toán, ký hiệu, quy tắc ưu tiên, công thức, các b�
 
 Chuyển tab không tải lại trang, không gọi lại thuật toán và giữ nguyên dữ liệu, cấu hình, kết quả, biểu đồ. Dùng mũi tên trái/phải, Home và End để chuyển tab bằng bàn phím.
 
-Switch **Sáng** ở header chuyển giữa dark mode mặc định và giao diện sáng tối giản trên cả hai tab. Lựa chọn được lưu trong trình duyệt; đổi theme không tải lại trang hoặc chạy lại thuật toán. Khi trình duyệt chặn lưu trữ, switch vẫn hoạt động trong phiên hiện tại.
+Switch **Sáng** ở header chuyển giữa giao diện sáng mặc định và dark mode trên cả hai tab. Lựa chọn được lưu trong trình duyệt; đổi theme không tải lại trang hoặc chạy lại thuật toán. Khi trình duyệt chặn lưu trữ, ứng dụng mặc định giao diện sáng và switch vẫn hoạt động trong phiên hiện tại.
 
 ## Cài đặt và chạy
 

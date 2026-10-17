@@ -2,9 +2,9 @@
 (() => {
     const root = document.documentElement;
     const key = 'scheduling-theme';
-    let theme = 'dark';
+    let theme = 'light';
     try {
-        if (localStorage.getItem(key) === 'light') theme = 'light';
+        if (localStorage.getItem(key) === 'dark') theme = 'dark';
     } catch (_) { /* Trình duyệt có thể chặn lưu trữ. */ }
 
     function apply(value) {
