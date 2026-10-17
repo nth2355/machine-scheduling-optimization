@@ -11,7 +11,7 @@
         theme = value;
         root.dataset.theme = value;
         const meta = document.querySelector('meta[name="theme-color"]');
-        if (meta) meta.content = value === 'light' ? '#f6f7f9' : '#28385e';
+        if (meta) meta.content = value === 'light' ? '#ffffff' : '#28385e';
         const toggle = document.getElementById('themeToggle');
         if (toggle) toggle.setAttribute('aria-checked', String(value === 'light'));
     }

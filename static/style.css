@@ -26,15 +26,16 @@
 /* Giao diện sáng dùng cùng token, không thay DOM hoặc trạng thái thử nghiệm. */
 :root[data-theme="light"] {
     color-scheme: light;
-    --background: #f6f7f9; --sidebar: #ffffff; --surface: #ffffff;
+    --background: #ffffff; --sidebar: #ffffff; --surface: #ffffff;
     --hover: #edf1f4; --detail-accent: #607086;
     --text: #202c3d; --muted: #526174; --placeholder: #526174;
     --line: #c9d1da; --control: #748194;
-    --accent: #17633d; --accent-hover: #104d2e; --on-accent: #ffffff;
-    --graphic-accent: #17633d; --accent-soft: #eaf5ee; --selected-text: #17633d;
+    --accent: #006bc2; --accent-hover: #00549a; --on-accent: #ffffff;
+    --graphic-accent: #1685e5; --accent-soft: #eaf5ff; --selected-text: #006bc2;
+    --button-bg: #111111; --button-hover: #303030;
     --attention: #805416; --attention-soft: #fff5e4;
     --late: #a32727; --late-soft: #fff0ef;
-    --success: #17633d; --success-soft: #eaf5ee;
+    --success: #006bc2; --success-soft: #eaf5ff;
     --disabled-bg: #edf1f4; --disabled-text: #526174;
     --chart-ontime: #dde8f0; --chart-ontime-text: #202c3d;
     --chart-late: #ffd6d2; --chart-late-stripe: #ffd6d2; --chart-late-text: #802020;
@@ -409,6 +410,19 @@ button.primary:hover:not(:disabled) { background: var(--accent-hover); }
 .theme-toggle[aria-checked="true"] .theme-switch-track { background: var(--accent); border-color: var(--accent); }
 .theme-toggle[aria-checked="true"] .theme-switch-track > span { background: var(--on-accent); transform: translateX(14px); }
 :root[data-theme="light"] .gantt-bar.green { color: var(--chart-ontime-text); }
+/* Nút đen tách khỏi màu xanh dùng cho chọn, focus và kết quả nổi bật. */
+:root[data-theme="light"] button.primary:not(:disabled),
+:root[data-theme="light"] button.secondary:not(:disabled) {
+    background: var(--button-bg); color: var(--on-accent); border-color: var(--button-bg);
+}
+:root[data-theme="light"] button.primary:hover:not(:disabled),
+:root[data-theme="light"] button.secondary:hover:not(:disabled),
+:root[data-theme="light"] button.primary:active:not(:disabled) {
+    background: var(--button-hover); border-color: var(--button-hover);
+}
+:root[data-theme="light"] .main-tabs [role="tab"][aria-selected="true"] {
+    background: var(--accent-soft); border-bottom-color: var(--graphic-accent);
+}
 @media (max-width: 600px) {
     .title-row { flex-wrap: wrap; gap: 12px; }
 }
